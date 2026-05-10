@@ -1453,34 +1453,42 @@ if (_cancelEnvEl) _cancelEnvEl.addEventListener('click', () => {
                     const disclaimerModal = document.getElementById('disclaimer-modal');
 
 
-                    if (disclaimerModal) {
-                        showModal(disclaimerModal);
-                    }
-                });sessionBtn.addEventListener('click', () => {
-    if (typeof openSessionManager === 'function') {
-        openSessionManager();
+if (disclaimerModal) {
+        showModal(disclaimerModal);
     }
 });
-            }
 
-        }
-
-
+// sessionBtn 可能不存在，加个判断
 var sessionBtn = document.getElementById('session-manager-btn');
 if (sessionBtn) {
-   
+    sessionBtn.addEventListener('click', () => {
+        if (typeof openSessionManager === 'function') {
+            openSessionManager();
+        }
+    });
+}
+
+// 会话管理的其他监听
+if (DOMElements.sessionModal && DOMElements.sessionModal.managerBtn) {
+    DOMElements.sessionModal.managerBtn.addEventListener('click', () => {
+        renderSessionList(); showModal(DOMElements.sessionModal.modal);
+    });
+}
+if (DOMElements.sessionModal && DOMElements.sessionModal.createBtn) {
+    DOMElements.sessionModal.createBtn.addEventListener('click', async () => {
+        await createNewSession(false);
+        renderSessionList();
+        showNotification('新会话已创建', 'success');
+    });
 }
 if (DOMElements.sessionModal && DOMElements.sessionModal.list) {
-    DOMElements.sessionModal.list.addEventListener(...)
+    DOMElements.sessionModal.list.addEventListener('click', (e) => {
+        const item = e.target.closest('.session-item');
+        if (!item) return;
+        const sessionId = item.dataset.id;
+        // 这里继续你原有的 session 点击逻辑
+    });
 }
-        DOMElements.sessionModal.managerBtn.addEventListener('click', () => {
-            renderSessionList(); showModal(DOMElements.sessionModal.modal);
-        });
-        DOMElements.sessionModal.createBtn.addEventListener('click', async () => {
-            await createNewSession(false);
-            renderSessionList();
-            showNotification('新会话已创建', 'success');
-        });
 
         DOMElements.sessionModal.list.addEventListener('click', (e) => {
             const item = e.target.closest('.session-item');
