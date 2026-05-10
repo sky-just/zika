@@ -1677,37 +1677,46 @@ if (partnerPersonas && partnerPersonas.length > 0 && Math.random() < 0.3) {
                 return;
             }
 
-            // 确认有可用回复后再展示“正在输入中”，避免空转
-            showTypingIndicator();
-            let delay = 0;
+           // 确认有可用回复后再展示“正在输入中”，避免空转
+showTypingIndicator();
+var delay = 0;
+
 function getReplyFromComboOrSingle(pool) {
-    const comboCards = window.comboCards;
+    var comboCards = window.comboCards;
     if (comboCards && comboCards.length > 0 && Math.random() < 0.3) {
-        const combo = comboCards[Math.floor(Math.random() * comboCards.length)];
+        var combo = comboCards[Math.floor(Math.random() * comboCards.length)];
         if (combo.items && combo.items.length >= 2) {
             return combo.items.join(combo.separator || ' ');
         }
     }
     return pool[Math.floor(Math.random() * pool.length)];
-}                     
-            const recentUserMsgs = settings.replyEnabled
-                ? messages.filter(m => m.sender === 'user' && m.text).slice(-10)
-                : [];
-            for (let i = 0; i < replyCount; i++) {
-                const delayRange = settings.replyDelayMax - settings.replyDelayMin;
-                delay += settings.replyDelayMin + Math.random() * delayRange;
-                setTimeout(() => {
-                    try {
-const replyPool = replyPoolOnce;
-                    // 被屏蔽或无效项直接换下一个，尽量保证每次都产出可用回复
-                    let replyText = '';
-                    for (let t = 0; t < 6; t++) {
-                       const picked = getReplyFromComboOrSingle(replyPool);
-                        if (picked && String(picked).trim()) {
-                            replyText = String(picked).trim();
-                            break;
-                        }
-                    }
+}
+
+var recentUserMsgs = settings.replyEnabled
+    ? messages.filter(function(m) { return m.sender === 'user' && m.text; }).slice(-10)
+    : [];
+
+for (var i = 0; i < replyCount; i++) {
+    var delayRange = settings.replyDelayMax - settings.replyDelayMin;
+    delay += settings.replyDelayMin + Math.random() * delayRange;
+    setTimeout(function() {
+        try {
+            var replyPool = replyPoolOnce;
+            var replyText = '';
+            for (var t = 0; t < 6; t++) {
+                var picked = getReplyFromComboOrSingle(replyPool);
+                if (picked && String(picked).trim()) {
+                    replyText = String(picked).trim();
+                    break;
+                }
+            }
+            // 继续往下对接你原本的发送逻辑
+            // （确保下面紧跟着你原来的 addMessage 或 sendReply 代码）
+        } catch (e) {
+            console.error(e);
+        }
+    }, delay);
+}
                     if (!replyText && i === replyCount - 1) {
                         (function(){try{if(window._typingIndicatorAutoHideTimer){clearTimeout(window._typingIndicatorAutoHideTimer);window._typingIndicatorAutoHideTimer=null;}}catch(e){}var _tiW=document.getElementById('typing-indicator-wrapper');if(_tiW){var _tiInner=_tiW.querySelector('.typing-indicator');if(_tiInner){_tiInner.classList.add('hiding');setTimeout(function(){_tiW.style.display='none';if(_tiInner)_tiInner.classList.remove('hiding');},240);}else{_tiW.style.display='none';}}})();
                         return;
