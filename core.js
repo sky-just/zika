@@ -1689,8 +1689,7 @@ function getReplyFromComboOrSingle(pool) {
         }
     }
     return pool[Math.floor(Math.random() * pool.length)];
-}                    
-const 
+}                     
             const recentUserMsgs = settings.replyEnabled
                 ? messages.filter(m => m.sender === 'user' && m.text).slice(-10)
                 : [];
