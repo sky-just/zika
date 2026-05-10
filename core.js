@@ -1866,8 +1866,7 @@ for (var i = 0; i < replyCount; i++) {
                         })();
                     }
                    
-            }
-        }
+       
 
 function showModal(modalElement, focusElement = null) {
             if (modalElement._hideTimeout) {
