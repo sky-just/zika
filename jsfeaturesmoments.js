@@ -1,23 +1,26 @@
 // js/features/moments.js
-// 朋友圈功能 —— 双方动态 + 评论
+// 朋友圈功能 v2 —— 双方动态 + 评论 + 背景图 + 板块分离
 
 (function () {
     'use strict';
 
     const STORAGE_KEY = (typeof APP_PREFIX !== 'undefined' ? APP_PREFIX : 'chatapp_') + 'moments';
+    const BG_KEY = STORAGE_KEY + '_bg';
 
-    let momentsData = [];          // 所有动态
-    let currentOpenMomentId = null; // 当前查看评论的动态ID
+    let momentsData = [];
+    let momentsBg = '';
 
-    // ---------- 工具函数 ----------
     function getStorageKey() { return STORAGE_KEY; }
 
     async function loadMoments() {
         if (window.localforage) {
             const saved = await localforage.getItem(getStorageKey());
             if (Array.isArray(saved)) momentsData = saved;
+            const bg = await localforage.getItem(BG_KEY);
+            if (bg) momentsBg = bg;
         } else {
-            try { momentsData = JSON.parse(localStorage.getItem(getStorageKey()) || '[]'); } catch(e){}
+            try { momentsData = JSON.parse(localStorage.getItem(getStorageKey()) || '[]'); } catch(e) {}
+            momentsBg = localStorage.getItem(BG_KEY) || '';
         }
     }
 
@@ -26,6 +29,14 @@
             await localforage.setItem(getStorageKey(), momentsData);
         } else {
             localStorage.setItem(getStorageKey(), JSON.stringify(momentsData));
+        }
+    }
+
+    async function saveBg() {
+        if (window.localforage) {
+            await localforage.setItem(BG_KEY, momentsBg);
+        } else {
+            localStorage.setItem(BG_KEY, momentsBg);
         }
     }
 
@@ -48,12 +59,12 @@
     }
 
     function getAvatarFor(sender) {
-        if (sender === 'partner') return getMyAvatar();
+        if (sender === 'user') return getMyAvatar();
         return getPartnerAvatar();
     }
 
     function getNameFor(sender) {
-        if (sender === 'partner') return getMyName();
+        if (sender === 'user') return getMyName();
         return getPartnerName();
     }
 
@@ -67,7 +78,6 @@
         return `${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     }
 
-    // 图片压缩（复用 storage-enhance 如果有的话，否则简单处理）
     function compressImage(file) {
         return new Promise((resolve) => {
             if (!file || !file.type.startsWith('image/')) { resolve(null); return; }
@@ -91,30 +101,57 @@
         });
     }
 
-    // ---------- 界面渲染 ----------
+    // ========== 切换板块 ==========
+    let currentTab = 'all'; // 'all' | 'mine' | 'partner'
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.moments-tab-btn').forEach(b => b.classList.remove('active'));
+        const activeBtn = document.querySelector(`.moments-tab-btn[data-tab="${tab}"]`);
+        if (activeBtn) activeBtn.classList.add('active');
+        renderMoments();
+    }
+
+    // ========== 渲染朋友圈列表 ==========
     function renderMoments() {
         const container = document.getElementById('moments-list');
         if (!container) return;
 
-        if (momentsData.length === 0) {
+        // 根据当前板块筛选
+        let filtered = [...momentsData];
+        if (currentTab === 'mine') {
+            filtered = filtered.filter(m => m.sender === 'user');
+        } else if (currentTab === 'partner') {
+            filtered = filtered.filter(m => m.sender === 'partner');
+        }
+
+        // 背景图
+        if (momentsBg) {
+            container.style.backgroundImage = `url(${momentsBg})`;
+            container.style.backgroundSize = 'cover';
+            container.style.backgroundPosition = 'center';
+        } else {
+            container.style.backgroundImage = '';
+        }
+
+        if (filtered.length === 0) {
             container.innerHTML = `
                 <div style="text-align:center;padding:50px 20px;color:var(--text-secondary);">
                     <i class="fas fa-camera-retro" style="font-size:42px;opacity:0.3;display:block;margin-bottom:12px;"></i>
                     <p style="font-size:14px;font-weight:500;">还没有动态</p>
-                    <p style="font-size:12px;opacity:0.7;">点上方按钮发布第一条朋友圈吧~</p>
+                    <p style="font-size:12px;opacity:0.7;">点下方按钮发布第一条朋友圈吧~</p>
                 </div>`;
             return;
         }
 
-        // 按时间倒序
-        const sorted = [...momentsData].sort((a,b) => b.timestamp - a.timestamp);
+        const sorted = filtered.sort((a,b) => b.timestamp - a.timestamp);
         container.innerHTML = sorted.map(m => {
             const avatarSrc = getAvatarFor(m.sender);
             const name = getNameFor(m.sender);
             const commentCount = (m.comments || []).length;
             const hasImage = m.image && m.image.startsWith('data:');
             const isMyMoment = m.sender === 'user';
-            
+
             return `
             <div class="moments-card" data-id="${m.id}">
                 <div class="moments-header">
@@ -136,7 +173,6 @@
                         <i class="fas fa-comment"></i> ${commentCount > 0 ? commentCount : '评论'}
                     </button>
                 </div>
-                <!-- 评论区（默认隐藏，点击后展示） -->
                 <div class="moments-comments" id="comments-${m.id}" style="display:none;">
                     <div class="moments-comments-list">
                         ${(m.comments || []).map(c => {
@@ -164,12 +200,10 @@
             </div>`;
         }).join('');
 
-        // 绑定事件
         bindEvents();
     }
 
     function bindEvents() {
-        // 删除动态
         document.querySelectorAll('.moments-delete-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -183,7 +217,6 @@
             });
         });
 
-        // 展开/收起评论
         document.querySelectorAll('.moments-comment-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -192,11 +225,9 @@
                 if (!commentsDiv) return;
                 const isHidden = commentsDiv.style.display === 'none';
                 commentsDiv.style.display = isHidden ? 'block' : 'none';
-                currentOpenMomentId = isHidden ? id : null;
             });
         });
 
-        // 发送评论（自己身份）
         document.querySelectorAll('.moments-comment-send').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -205,7 +236,6 @@
             });
         });
 
-        // 以梦角身份发送评论
         document.querySelectorAll('.moments-comment-as-partner').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -214,7 +244,6 @@
             });
         });
 
-        // 回车发送评论
         document.querySelectorAll('.moments-comment-input').forEach(input => {
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
@@ -242,14 +271,12 @@
         saveMoments();
         input.value = '';
         renderMoments();
-        // 重新打开该动态的评论区
         const commentsDiv = document.getElementById('comments-' + momentId);
         if (commentsDiv) commentsDiv.style.display = 'block';
     }
 
-    // ---------- 发布新动态 ----------
-    async function openNewMoment(sender = 'partner') {
-        // 创建一个简单的输入弹窗
+    // ========== 写动态 ==========
+    async function openWriteMoment(sender = 'user') {
         const overlay = document.createElement('div');
         overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.55);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;';
         overlay.innerHTML = `
@@ -322,16 +349,41 @@
         overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
     }
 
-    // ---------- 打开朋友圈窗口 ----------
+    // ========== 设置背景图 ==========
+    function openBgSetter() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const dataUrl = await compressImage(file);
+                if (dataUrl) {
+                    momentsBg = dataUrl;
+                    await saveBg();
+                    renderMoments();
+                    showNotification('背景图已更新', 'success');
+                }
+            }
+        };
+        input.click();
+    }
+
+    function clearBg() {
+        momentsBg = '';
+        saveBg();
+        renderMoments();
+        showNotification('背景图已清除', 'success');
+    }
+
+    // ========== 打开朋友圈面板 ==========
     function openMomentsPanel() {
-        // 检查是否已经存在模态框，避免重复创建
         if (document.getElementById('moments-modal')) {
             showModal(document.getElementById('moments-modal'));
             renderMoments();
             return;
         }
 
-        // 创建朋友圈模态框
         const modal = document.createElement('div');
         modal.id = 'moments-modal';
         modal.className = 'modal';
@@ -342,17 +394,31 @@
                     <i class="fas fa-images" style="color:var(--accent-color);font-size:18px;"></i>
                     <span style="font-size:17px;font-weight:700;color:var(--text-primary);">朋友圈</span>
                 </div>
-                <button id="close-moments-btn" style="background:none;border:none;color:var(--text-secondary);font-size:18px;cursor:pointer;">×</button>
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <button id="moments-bg-btn" title="设置背景图" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:14px;">🖼</button>
+                    <button id="moments-bg-clear-btn" title="清除背景图" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:14px;">✕</button>
+                    <button id="close-moments-btn" style="background:none;border:none;color:var(--text-secondary);font-size:18px;cursor:pointer;">×</button>
+                </div>
             </div>
-            <div style="display:flex;gap:10px;padding:12px 20px;background:var(--primary-bg);border-bottom:1px solid var(--border-color);">
-                <button id="new-moment-me-btn" class="modal-btn modal-btn-primary" style="flex:1;">
-                    <i class="fas fa-pen"></i> 我发动态
-                </button>
-                <button id="new-moment-partner-btn" class="modal-btn modal-btn-secondary" style="flex:1;">
-                    <i class="fas fa-heart"></i> ${escapeHtml(getPartnerName())}发动态
-                </button>
+
+            <!-- 板块切换 -->
+            <div style="display:flex;gap:4px;padding:8px 16px;background:var(--primary-bg);border-bottom:1px solid var(--border-color);">
+                <button class="moments-tab-btn active" data-tab="all">全部动态</button>
+                <button class="moments-tab-btn" data-tab="mine">我的动态</button>
+                <button class="moments-tab-btn" data-tab="partner">${escapeHtml(getPartnerName())}的动态</button>
             </div>
+
             <div id="moments-list" style="flex:1;overflow-y:auto;padding:12px 16px 24px;background:var(--primary-bg);"></div>
+
+            <!-- 底部写动态按钮 -->
+            <div style="padding:10px 16px;border-top:1px solid var(--border-color);background:var(--secondary-bg);display:flex;gap:8px;">
+                <button id="write-moment-me-btn" class="modal-btn modal-btn-primary" style="flex:1;">
+                    <i class="fas fa-pen"></i> 写动态
+                </button>
+                <button id="write-moment-partner-btn" class="modal-btn modal-btn-secondary" style="flex:1;">
+                    <i class="fas fa-heart"></i> 以${escapeHtml(getPartnerName())}身份写
+                </button>
+            </div>
         </div>`;
         document.body.appendChild(modal);
         showModal(modal);
@@ -360,25 +426,99 @@
 
         // 绑定事件
         modal.querySelector('#close-moments-btn').addEventListener('click', () => hideModal(modal));
-        modal.querySelector('#new-moment-me-btn').addEventListener('click', () => openNewMoment('partner'));
-        modal.querySelector('#new-moment-partner-btn').addEventListener('click', () => openNewMoment('user'));
+        modal.querySelector('#write-moment-me-btn').addEventListener('click', () => openWriteMoment('user'));
+        modal.querySelector('#write-moment-partner-btn').addEventListener('click', () => openWriteMoment('partner'));
+        modal.querySelector('#moments-bg-btn').addEventListener('click', openBgSetter);
+        modal.querySelector('#moments-bg-clear-btn').addEventListener('click', clearBg);
+
+        // 板块切换
+        modal.querySelectorAll('.moments-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
     }
 
-    // ---------- CSS 注入 ----------
+    // ========== 梦角自动发朋友圈 ==========
+    function generateRandomMomentText() {
+        const pool = window.customReplies && window.customReplies.length > 0 ? window.customReplies : [];
+        if (pool.length === 0) return '今天天气不错~';
+        const count = Math.floor(Math.random() * 3) + 1;
+        const sentences = [];
+        for (let i = 0; i < count; i++) {
+            sentences.push(pool[Math.floor(Math.random() * pool.length)]);
+        }
+        return sentences.join(' ');
+    }
+
+    function autoPostPartnerMoment() {
+        const text = generateRandomMomentText();
+        momentsData.push({
+            id: Date.now(),
+            sender: 'partner',
+            text: text,
+            image: null,
+            timestamp: Date.now(),
+            comments: []
+        });
+        saveMoments();
+        if (document.getElementById('moments-modal') && 
+            getComputedStyle(document.getElementById('moments-modal')).display !== 'none') {
+            renderMoments();
+        }
+    }
+
+    function startMomentOversight() {
+        setInterval(() => {
+            if (window.partnerAutoControl && window.partnerAutoControl.isOverdue('moment')) {
+                window.partnerAutoControl.updateLastTime('moment');
+                autoPostPartnerMoment();
+            }
+        }, 10 * 60 * 1000);
+    }
+
+    function scheduleRandomMoment() {
+        const maxDelay = 5 * 24 * 60 * 60 * 1000;
+        const delay = Math.random() * maxDelay;
+        setTimeout(() => {
+            if (window.partnerAutoControl && !window.partnerAutoControl.isOverdue('moment')) {
+                window.partnerAutoControl.updateLastTime('moment');
+                autoPostPartnerMoment();
+            }
+            scheduleRandomMoment();
+        }, delay);
+    }
+
+    // ========== CSS 注入 ==========
     function injectCSS() {
-        if (document.getElementById('moments-style')) return;
+        if (document.getElementById('moments-style-v2')) return;
         const style = document.createElement('style');
-        style.id = 'moments-style';
+        style.id = 'moments-style-v2';
         style.textContent = `
+            .moments-tab-btn {
+                flex: 1;
+                padding: 7px 4px;
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                background: transparent;
+                color: var(--text-secondary);
+                font-size: 12px;
+                font-weight: 600;
+                cursor: pointer;
+                font-family: var(--font-family);
+                transition: all 0.2s;
+            }
+            .moments-tab-btn.active {
+                background: var(--accent-color);
+                color: #fff;
+                border-color: var(--accent-color);
+            }
             .moments-card {
-                background: var(--secondary-bg);
+                background: rgba(var(--secondary-bg-rgb), 0.92);
                 border-radius: var(--radius);
                 padding: 16px;
                 margin-bottom: 14px;
                 border: 1px solid var(--border-color);
-                transition: box-shadow 0.2s;
+                backdrop-filter: blur(4px);
             }
-            .moments-card:hover { box-shadow: 0 4px 16px rgba(var(--accent-color-rgb,197,164,126),0.08); }
             .moments-header {
                 display: flex;
                 align-items: center;
@@ -386,15 +526,11 @@
                 margin-bottom: 12px;
             }
             .moments-avatar {
-                width: 38px;
-                height: 38px;
+                width: 38px; height: 38px;
                 border-radius: 50%;
-                background: rgba(var(--accent-color-rgb,197,164,126),0.12);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                overflow: hidden;
-                flex-shrink: 0;
+                background: rgba(var(--accent-color-rgb),0.12);
+                display: flex; align-items: center; justify-content: center;
+                overflow: hidden; flex-shrink: 0;
             }
             .moments-avatar img { width:100%; height:100%; object-fit:cover; }
             .moments-avatar i { font-size:16px; color:var(--accent-color); }
@@ -402,13 +538,8 @@
             .moments-username { font-size:14px; font-weight:600; color:var(--text-primary); }
             .moments-time { font-size:11px; color:var(--text-secondary); display:block; margin-top:2px; }
             .moments-delete-btn {
-                background: none;
-                border: none;
-                color: var(--text-secondary);
-   cursor: pointer;
-                padding: 4px 8px;
-                border-radius: 50%;
-                transition: 0.2s;
+                background: none; border: none; color: var(--text-secondary);
+                cursor: pointer; padding: 4px 8px; border-radius: 50%;
             }
             .moments-delete-btn:hover { background: rgba(255,71,87,0.1); color:#ff4757; }
             .moments-body { margin-bottom: 12px; }
@@ -416,22 +547,17 @@
             .moments-image { max-width:100%; max-height:300px; border-radius:12px; margin-top:10px; cursor:pointer; }
             .moments-footer { display:flex; align-items:center; gap:15px; }
             .moments-comment-btn {
-                background: none;
-                border: none;
-                color: var(--text-secondary);
-                cursor: pointer;
-                font-size:13px;
-                display:flex; align-items:center; gap:4px;
+                background: none; border: none; color: var(--text-secondary);
+                cursor: pointer; font-size:13px; display:flex; align-items:center; gap:4px;
                 padding:4px 8px; border-radius:6px;
-                transition:0.2s;
             }
-            .moments-comment-btn:hover { background: var(--primary-bg); color:var(--accent-color); }
+            .moments-comment-btn:hover { background: rgba(var(--accent-color-rgb),0.1); color:var(--accent-color); }
             .moments-comments { margin-top:10px; padding-top:10px; border-top:1px solid var(--border-color); }
             .moments-comments-list { display:flex; flex-direction:column; gap:10px; margin-bottom:12px; }
             .moments-comment-item { display:flex; gap:8px; align-items:flex-start; }
             .moments-comment-avatar {
                 width:26px; height:26px; border-radius:50%;
-                background: rgba(var(--accent-color-rgb,197,164,126),0.1);
+                background: rgba(var(--accent-color-rgb),0.1);
                 display:flex; align-items:center; justify-content:center;
                 overflow:hidden; flex-shrink:0;
             }
@@ -444,17 +570,13 @@
             .moments-add-comment { display:flex; gap:8px; align-items:center; }
             .moments-comment-input {
                 flex:1; padding:8px 12px;
-                border:1px solid var(--border-color);
-                border-radius:20px;
-                background:var(--primary-bg);
-                color:var(--text-primary);
+                border:1px solid var(--border-color); border-radius:20px;
+                background:var(--primary-bg); color:var(--text-primary);
                 font-size:13px; outline:none;
             }
             .moments-comment-send {
-                background: var(--accent-color);
-                color: #fff; border:none;
-                padding:7px 16px; border-radius:20px;
-                cursor:pointer; font-size:12px; font-weight:600;
+                background: var(--accent-color); color: #fff; border:none;
+                padding:7px 16px; border-radius:20px; cursor:pointer; font-size:12px; font-weight:600;
             }
             .moments-comment-as-partner {
                 background: none; border: 1px solid var(--border-color);
@@ -465,17 +587,15 @@
         document.head.appendChild(style);
     }
 
-    // 转义
     function escapeHtml(text) {
         return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    // ---------- 初始化入口监听 ----------
-    function init() {
+    // ========== 初始化 ==========
+    async function init() {
         injectCSS();
-        loadMoments();
+        await loadMoments();
 
-        // 等待高级功能面板就绪后绑定点击事件
         const bindEntry = () => {
             const entry = document.getElementById('moments-function');
             if (entry) {
@@ -486,76 +606,22 @@
                 });
             }
         };
-        // 因为 modal 可能在后续才创建，用 MutationObserver 监听
+
         const observer = new MutationObserver(bindEntry);
         observer.observe(document.body, { childList: true, subtree: true });
-        // 立即尝试一次
         setTimeout(bindEntry, 1000);
+
+        if (!window._momentOversightStarted) {
+            window._momentOversightStarted = true;
+            startMomentOversight();
+            scheduleRandomMoment();
+        }
     }
 
-    // 启动
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
         init();
     }
-// ========== 梦角自动发朋友圈 ==========
-function generateRandomMomentText() {
-    var pool = window.customReplies && window.customReplies.length > 0 ? window.customReplies : [];
-    if (pool.length === 0) return '今天天气不错~';
-    var count = Math.floor(Math.random() * 3) + 1;
-    var sentences = [];
-    for (var i = 0; i < count; i++) {
-        sentences.push(pool[Math.floor(Math.random() * pool.length)]);
-    }
-    return sentences.join(' ');
-}
 
-function autoPostPartnerMoment() {
-    var text = generateRandomMomentText();
-    momentsData.push({
-        id: Date.now(),
-        sender: 'partner',
-        text: text,
-        image: null,
-        timestamp: Date.now(),
-        comments: []
-    });
-    saveMoments();
-    // 如果朋友圈面板正好打开，就刷新显示
-    if (document.getElementById('moments-modal') && 
-        getComputedStyle(document.getElementById('moments-modal')).display !== 'none') {
-        renderMoments();
-    }
-}
-
-// 每 10 分钟检查一次，如果超过 5 天没发朋友圈，就立刻发一条
-function startMomentOversight() {
-    setInterval(function() {
-        if (window.partnerAutoControl && window.partnerAutoControl.isOverdue('moment')) {
-            window.partnerAutoControl.updateLastTime('moment');
-            autoPostPartnerMoment();
-        }
-    }, 10 * 60 * 1000);
-}
-
-// 随机提前发朋友圈
-function scheduleRandomMoment() {
-    var maxDelay = 5 * 24 * 60 * 60 * 1000;
-    var delay = Math.random() * maxDelay;
-    setTimeout(function() {
-        if (window.partnerAutoControl && !window.partnerAutoControl.isOverdue('moment')) {
-            window.partnerAutoControl.updateLastTime('moment');
-            autoPostPartnerMoment();
-        }
-        scheduleRandomMoment();
-    }, delay);
-}
-
-// 启动
-if (!window._momentOversightStarted) {
-    window._momentOversightStarted = true;
-    startMomentOversight();
-    scheduleRandomMoment();
-}
 })();
