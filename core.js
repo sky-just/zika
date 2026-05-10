@@ -2368,12 +2368,12 @@ window.initializeSession = async function() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    const chatArea = document.querySelector('.main-chat-area');
-    const historyLoader = document.getElementById('history-loader');
-    
+    var chatArea = document.querySelector('.main-chat-area');
+    var historyLoader = document.getElementById('history-loader');
+
     if (chatArea && historyLoader && typeof IntersectionObserver !== 'undefined') {
-        const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting && messages.length > displayedMessageCount) {
+        var observer = new IntersectionObserver(function(entries) {
+            if (entries[0].isIntersecting && messages.length > 0 && displayedMessageCount === 0) {
                 loadMoreHistory();
             }
         }, {
@@ -2381,6 +2381,6 @@ document.addEventListener('DOMContentLoaded', function() {
             rootMargin: '200px 0px 0px 0px',
             threshold: 0.01
         });
-      observer.observe(historyLoader);
+        observer.observe(historyLoader);
     }
 });
