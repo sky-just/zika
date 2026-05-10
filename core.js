@@ -2361,7 +2361,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, {
             root: chatArea,
-            rootMargin: '200px 0px 0px',
+            rootMargin: '200px 0px 0px 0px',
             threshold: 0.01
         });
         observer.observe(historyLoader);
