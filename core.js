@@ -1678,6 +1678,7 @@ if (partnerPersonas && partnerPersonas.length > 0 && Math.random() < 0.3) {
             }
 
            // 确认有可用回复后再展示“正在输入中”，避免空转
+// 确认有可用回复后再展示“正在输入中”，避免空转
 showTypingIndicator();
 var delay = 0;
 
@@ -1710,8 +1711,60 @@ for (var i = 0; i < replyCount; i++) {
                     break;
                 }
             }
-            // 继续往下对接你原本的发送逻辑
-            // （确保下面紧跟着你原来的 addMessage 或 sendReply 代码）
+
+            if (!replyText && i === replyCount - 1) {
+                if (window._typingIndicatorAutoHideTimer) {
+                    clearTimeout(window._typingIndicatorAutoHideTimer);
+                }
+                return;
+            }
+
+            var disabledStickerItems = new Set();
+            try {
+                var raw = localStorage.getItem('disabledStickerItems');
+                if (raw) disabledStickerItems = new Set(JSON.parse(raw));
+            } catch (e) {}
+            var enabledStickerPool = (stickerLibrary || []).filter(function(s) {
+                return !disabledStickerItems.has(s);
+            });
+            var shouldSendSticker = enabledStickerPool.length > 0 && Math.random() < 0.2;
+
+            var finalText = replyText;
+            var separateEmoji = null;
+            if (customEmojis && customEmojis.length > 0 && Math.random() < 0.2) {
+                separateEmoji = customEmojis[Math.floor(Math.random() * customEmojis.length)];
+            }
+
+            addMessage({
+                id: Date.now() + i,
+                sender: settings.partnerName || '对方',
+                text: finalText,
+                timestamp: new Date().toISOString(),
+                status: 'sent',
+                type: 'normal'
+            });
+
+            playSound('message');
+
+            if (shouldSendSticker) {
+                var randomSticker = enabledStickerPool[Math.floor(Math.random() * enabledStickerPool.length)];
+                setTimeout(function() {
+                    addMessage({
+                        id: Date.now() + i + 2000,
+                        sender: settings.partnerName || '对方',
+                        image: randomSticker,
+                        timestamp: new Date().toISOString(),
+                        status: 'sent',
+                        type: 'normal'
+                    });
+                }, 1000);
+            }
+
+        } catch (e) {
+            console.error(e);
+        }
+    }, delay);
+}
         } catch (e) {
             console.error(e);
         }
