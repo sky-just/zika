@@ -1611,5 +1611,164 @@ window.tryShowDailyGreeting = function() {
         var modal = document.getElementById('daily-greeting-modal');
         if (modal) modal.classList.remove('hidden');
     } catch(e) { console.warn('Daily greeting show error:', e); }
+    // ========== 组字卡管理面板 ==========
+function openComboManager() {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+        <div style="background:var(--secondary-bg);border-radius:20px;padding:24px;width:90%;max-width:420px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,0.3);">
+            <h3 style="margin-bottom:15px;color:var(--text-primary);">
+                <i class="fas fa-puzzle-piece" style="color:var(--accent-color);margin-right:6px;"></i>
+                组字卡管理
+            </h3>
+            <!-- 总开关 -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;padding:10px 14px;background:var(--primary-bg);border-radius:12px;">
+                <span style="font-weight:600;">开启组字卡功能</span>
+                <label style="position:relative;display:inline-block;width:44px;height:24px;">
+                    <input type="checkbox" id="combo-enable-toggle" ${window.comboCardsEnabled ? 'checked' : ''} style="opacity:0;width:0;height:0;">
+                    <span style="position:absolute;cursor:pointer;inset:0;background:${window.comboCardsEnabled ? 'var(--accent-color)' : 'var(--border-color)'};border-radius:24px;transition:0.3s;"></span>
+                    <span style="position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:0.3s;${window.comboCardsEnabled ? 'transform:translateX(20px);' : ''}"></span>
+                </label>
+            </div>
+            <!-- 组字卡列表 -->
+            <div id="combo-list-inner" style="margin-bottom:15px;"></div>
+            <button id="add-combo-inner-btn" class="modal-btn modal-btn-primary" style="width:100%;">
+                <i class="fas fa-plus"></i> 新建组字卡
+            </button>
+            <button id="close-combo-manager" class="modal-btn modal-btn-secondary" style="width:100%;margin-top:8px;">关闭</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    function renderComboList() {
+        const list = document.getElementById('combo-list-inner');
+        if (!list) return;
+        if (!window.comboCards || window.comboCards.length === 0) {
+            list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:20px;">还没有组字卡，点击下方按钮创建</p>';
+            return;
+        }
+        list.innerHTML = window.comboCards.map((combo, idx) => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--primary-bg);border-radius:8px;margin-bottom:6px;">
+                <div>
+                    <strong>${combo.name}</strong>
+                    <div style="font-size:11px;color:var(--text-secondary);">${combo.items.length} 条 · 分隔符「${escapeHtml(combo.separator || '')}」</div>
+                </div>
+                <div>
+                    <button class="edit-combo-btn" data-idx="${idx}" style="background:none;border:none;color:var(--accent-color);cursor:pointer;margin-right:4px;"><i class="fas fa-edit"></i></button>
+                    <button class="del-combo-btn" data-idx="${idx}" style="background:none;border:none;color:#ff4757;cursor:pointer;"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `).join('');
+
+        // 绑定删除事件
+        document.querySelectorAll('.del-combo-btn').forEach(btn => {
+            btn.onclick = () => {
+                const idx = btn.dataset.idx;
+                if (confirm('确定删除「' + window.comboCards[idx].name + '」吗？')) {
+                    window.comboCards.splice(idx, 1);
+                    if (typeof throttledSaveData === 'function') throttledSaveData();
+                    renderComboList();
+                }
+            };
+        });
+
+        // 绑定编辑事件
+        document.querySelectorAll('.edit-combo-btn').forEach(btn => {
+            btn.onclick = () => {
+                const idx = btn.dataset.idx;
+                editComboCard(idx);
+            };
+        });
+    }
+
+    function editComboCard(index) {
+        const combo = window.comboCards[index];
+        const editOverlay = document.createElement('div');
+        editOverlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;';
+        editOverlay.innerHTML = `
+          <div style="background:var(--secondary-bg);padding:20px;border-radius:16px;width:90%;max-width:400px;">
+                <h4>编辑组字卡</h4>
+                <input id="edit-combo-name" class="modal-input" value="${escapeHtml(combo.name)}" placeholder="名称">
+                <input id="edit-combo-sep" class="modal-input" value="${escapeHtml(combo.separator || '')}" placeholder="分隔符（如空格）">
+                <textarea id="edit-combo-items" class="modal-textarea" style="height:120px;">${combo.items.map(escapeHtml).join('\n')}</textarea>
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">
+                    <button id="cancel-edit-combo" class="modal-btn modal-btn-secondary">取消</button>
+                    <button id="save-edit-combo" class="modal-btn modal-btn-primary">保存</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(editOverlay);
+
+        editOverlay.querySelector('#cancel-edit-combo').onclick = () => editOverlay.remove();
+        editOverlay.querySelector('#save-edit-combo').onclick = () => {
+            const name = editOverlay.querySelector('#edit-combo-name').value.trim();
+            const sep = editOverlay.querySelector('#edit-combo-sep').value;
+            const items = editOverlay.querySelector('#edit-combo-items').value.split('\n').filter(Boolean);
+            if (!name || items.length < 2) {
+                showNotification('名称不能为空，且至少需要2条字卡', 'warning');
+                return;
+            }
+            window.comboCards[index] = { ...window.comboCards[index], name, separator: sep, items };
+            if (typeof throttledSaveData === 'function') throttledSaveData();
+            editOverlay.remove();
+            renderComboList();
+        };
+    }
+
+    renderComboList();
+
+    // 开关事件
+    document.getElementById('combo-enable-toggle').addEventListener('change', function() {
+        window.comboCardsEnabled = this.checked;
+        if (typeof throttledSaveData === 'function') throttledSaveData();
+    });
+
+    // 新建组字卡
+    document.getElementById('add-combo-inner-btn').addEventListener('click', () => {
+        window.comboCards.push({
+            id: Date.now(),
+            name: '新组合',
+            items: ['字卡A', '字卡B'],
+            separator: ' '
+        });
+        if (typeof throttledSaveData === 'function') throttledSaveData();
+        renderComboList();
+        // 自动打开编辑新组合
+        const index = window.comboCards.length - 1;
+        setTimeout(() => editComboCard(index), 100);
+    });
+
+    // 关闭
+    overlay.querySelector('#close-combo-manager').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+}
+
+function escapeHtml(text) {
+    return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// 在“高级功能”面板中动态插入“组字卡”入口
+function injectComboEntry() {
+    const target = document.querySelector('#advanced-modal .settings-item-list');
+    if (!target || document.getElementById('combo-function-entry')) return;
+    const entry = document.createElement('div');
+    entry.id = 'combo-function-entry';
+    entry.className = 'settings-item';
+    entry.innerHTML = '<i class="fas fa-puzzle-piece"></i><span>组字卡</span>';
+    entry.addEventListener('click', () => {
+        hideModal(document.getElementById('advanced-modal'));
+        openComboManager();
+    });
+    target.appendChild(entry);
+}
+
+// 监听高级功能面板的打开（适配原网站的逻辑）
+document.addEventListener('click', function(e) {
+    if (e.target.closest('#advanced-settings') || e.target.closest('[href*="advanced"]')) {
+        setTimeout(injectComboEntry, 300);
+    }
+});
+// 保险起见，如果页面加载完成就尝试注入
+setTimeout(injectComboEntry, 2000);
 };
 
