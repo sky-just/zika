@@ -1456,7 +1456,11 @@ if (_cancelEnvEl) _cancelEnvEl.addEventListener('click', () => {
                     if (disclaimerModal) {
                         showModal(disclaimerModal);
                     }
-                });
+                });sessionBtn.addEventListener('click', () => {
+    if (typeof openSessionManager === 'function') {
+        openSessionManager();
+    }
+});
             }
 
         }
@@ -1464,7 +1468,7 @@ if (_cancelEnvEl) _cancelEnvEl.addEventListener('click', () => {
 
 var sessionBtn = document.getElementById('session-manager-btn');
 if (sessionBtn) {
-    sessionBtn.addEventListener(...);
+   
 }
         DOMElements.sessionModal.managerBtn.addEventListener('click', () => {
             renderSessionList(); showModal(DOMElements.sessionModal.modal);
