@@ -2381,9 +2381,6 @@ document.addEventListener('DOMContentLoaded', function() {
             rootMargin: '200px 0px 0px 0px',
             threshold: 0.01
         });
-        observer.observe(historyLoader);
+      observer.observe(historyLoader);
     }
 });
-
-})();
-
