@@ -2321,29 +2321,7 @@ function showModal(modalElement, focusElement = null) {
             try {
                 const keys = Object.keys(localStorage);
                 for (const key of keys) {
-                    if (key.startsWith(APP_PREFIX)) {
-                        try {
-                            const val = localStorage.getItem(key);
-                            if (val) {
-                                let dataToStore = val;
-                                try {
-                                    if (val.startsWith('{') || val.startsWith('[')) {
-                                        dataToStore = JSON.parse(val);
-                                    }
-                                } catch (e) {
-                                    console.warn(`迁移期间解析数据失败: ${key}，将作为原始字符串存储。`, e);
-                                }
-                                await localforage.setItem(key, dataToStore);
-                            }
-                        } catch (e) {
-                            console.error(`迁移键值 ${key} 时发生错误，已跳过。`, e);
-                        }
-                    }
-                }
-                
-              
-        }
-
+                    if (
 
 document.addEventListener('DOMContentLoaded', function() {
     var chatArea = document.querySelector('.main-chat-area');
