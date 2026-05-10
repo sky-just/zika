@@ -48,12 +48,12 @@
     }
 
     function getAvatarFor(sender) {
-        if (sender === 'user') return getMyAvatar();
+        if (sender === 'partner') return getMyAvatar();
         return getPartnerAvatar();
     }
 
     function getNameFor(sender) {
-        if (sender === 'user') return getMyName();
+        if (sender === 'partner') return getMyName();
         return getPartnerName();
     }
 
