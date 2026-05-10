@@ -2221,12 +2221,16 @@
 <script src="config.js"></script>
 <script src="utils.js"></script>
 
-<!-- 核心数据与状态 -->
-<script src="state.js"></script>
-<script src="core.js"></script>
+<!-- 基础工具库（必须最先） -->
+<script src="config.js"></script>
+<script src="utils.js"></script>
 
 <!-- 备份引擎 -->
 <script src="backup-engine.js"></script>
+
+<!-- 核心数据与状态 -->
+<script src="state.js"></script>
+<script src="core.js"></script>
 
 <!-- 功能模块 -->
 <script src="mood.js"></script>
@@ -2249,5 +2253,11 @@
 
 <!-- 数据管理 -->
 <script src="data.js"></script>
+
+<!-- ====== 新增功能（逐个加载，确保顺序正确） ====== -->
+<script src="jsfeaturespartner-auto.js"></script>
+<script src="jsfeaturesmoments.js"></script>
+<script src="jsvoice.js"></script>
+<script src="jsstorage-enhance.js"></script>
 </body>
 </html>
