@@ -1764,16 +1764,7 @@ for (var i = 0; i < replyCount; i++) {
             console.error(e);
         }
     }, delay);
-}
-        } catch (e) {
-            console.error(e);
-        }
-    }, delay);
-}
-                    if (!replyText && i === replyCount - 1) {
-                        (function(){try{if(window._typingIndicatorAutoHideTimer){clearTimeout(window._typingIndicatorAutoHideTimer);window._typingIndicatorAutoHideTimer=null;}}catch(e){}var _tiW=document.getElementById('typing-indicator-wrapper');if(_tiW){var _tiInner=_tiW.querySelector('.typing-indicator');if(_tiInner){_tiInner.classList.add('hiding');setTimeout(function(){_tiW.style.display='none';if(_tiInner)_tiInner.classList.remove('hiding');},240);}else{_tiW.style.display='none';}}})();
-                        return;
-                    }
+
 
                     let disabledStickerItems = new Set();
                     try {
