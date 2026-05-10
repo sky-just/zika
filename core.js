@@ -1865,18 +1865,7 @@ for (var i = 0; i < replyCount; i++) {
                             }
                         })();
                     }
-                    } catch (e) {
-                        console.error('[simulateReply] 渲染/回填出错:', e);
-                        // 机制性兜底：出错时至少让“正在输入中”消失，避免假死
-                        try {
-                            (function(){
-                                try { if (window._typingIndicatorAutoHideTimer) { clearTimeout(window._typingIndicatorAutoHideTimer); window._typingIndicatorAutoHideTimer = null; } } catch (e2) {}
-                                var _tiW2 = document.getElementById('typing-indicator-wrapper');
-                                if (_tiW2) _tiW2.style.display = 'none';
-                            })();
-                        } catch (e2) {}
-                    }
-                }, delay);
+                   
             }
         }
 
