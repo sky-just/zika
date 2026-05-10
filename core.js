@@ -2313,8 +2313,7 @@ function showModal(modalElement, focusElement = null) {
             }
             return `${APP_PREFIX}${SESSION_ID}_${baseKey}`;
         }
-
-        document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
     var chatArea = document.querySelector('.main-chat-area');
     var historyLoader = document.getElementById('history-loader');
 
@@ -2331,3 +2330,4 @@ function showModal(modalElement, focusElement = null) {
         observer.observe(historyLoader);
     }
 });
+     
