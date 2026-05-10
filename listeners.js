@@ -1470,6 +1470,9 @@ var sessionBtn = document.getElementById('session-manager-btn');
 if (sessionBtn) {
    
 }
+if (DOMElements.sessionModal && DOMElements.sessionModal.list) {
+    DOMElements.sessionModal.list.addEventListener(...)
+}
         DOMElements.sessionModal.managerBtn.addEventListener('click', () => {
             renderSessionList(); showModal(DOMElements.sessionModal.modal);
         });
@@ -3250,3 +3253,5 @@ window.exitCollapseMode = function() {
         window.setupEventListeners = function() {};
     }
 })();
+if (typeof simulateReply === 'undefined') { window.simulateReply = function() {}; }
+if (typeof initializeSession === 'undefined') { window.initializeSession = function() {}; }
