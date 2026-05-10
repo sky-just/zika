@@ -360,8 +360,8 @@
 
         // 绑定事件
         modal.querySelector('#close-moments-btn').addEventListener('click', () => hideModal(modal));
-        modal.querySelector('#new-moment-me-btn').addEventListener('click', () => openNewMoment('user'));
-        modal.querySelector('#new-moment-partner-btn').addEventListener('click', () => openNewMoment('partner'));
+        modal.querySelector('#new-moment-me-btn').addEventListener('click', () => openNewMoment('partner'));
+        modal.querySelector('#new-moment-partner-btn').addEventListener('click', () => openNewMoment('user'));
     }
 
     // ---------- CSS 注入 ----------
