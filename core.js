@@ -2314,10 +2314,7 @@ function showModal(modalElement, focusElement = null) {
             return `${APP_PREFIX}${SESSION_ID}_${baseKey}`;
         }
 
-        async function migrateData() {
-            const isMigrated = await localforage.getItem(APP_PREFIX + 'MIGRATION_V2_DONE');
-         
-document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
     var chatArea = document.querySelector('.main-chat-area');
     var historyLoader = document.getElementById('history-loader');
 
