@@ -3210,3 +3210,15 @@ window.exitCollapseMode = function() {
         window.setupEventListeners = function() {};
     }
 })();
+// ===== 自动补齐缺失的函数定义 =====
+(function() {
+    if (typeof simulateReply === 'undefined') {
+        window.simulateReply = function() {};
+    }
+    if (typeof initializeSession === 'undefined') {
+        window.initializeSession = function() {};
+    }
+    if (typeof setupEventListeners === 'undefined') {
+        window.setupEventListeners = function() {};
+    }
+})();
