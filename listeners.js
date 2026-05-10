@@ -3213,7 +3213,9 @@ window.exitCollapseMode = function() {
         setTimeout(tryApply, 400);
     }
 })();
-// ===== 自动补齐缺失的函数定义（由朋友圈等新功能自动生成） =====
+
+
+// ===== 自动补齐缺失的函数定义（只保留一份） =====
 (function() {
     if (typeof simulateReply === 'undefined') {
         window.simulateReply = function() {};
@@ -3225,43 +3227,3 @@ window.exitCollapseMode = function() {
         window.setupEventListeners = function() {};
     }
 })();
-// ===== 自动补齐缺失的函数定义 =====
-(function() {
-    if (typeof simulateReply === 'undefined') {
-        window.simulateReply = function() {};
-    }
-    if (typeof initializeSession === 'undefined') {
-        window.initializeSession = function() {};
-    }
-    if (typeof setupEventListeners === 'undefined') {
-        window.setupEventListeners = function() {};
-    }
-})();
-// ===== 自动补齐缺失的函数定义 =====
-(function() {
-    if (typeof simulateReply === 'undefined') {
-        window.simulateReply = function() {};
-    }
-    if (typeof initializeSession === 'undefined') {
-        window.initializeSession = function() {};
-    }
-    if (typeof setupEventListeners === 'undefined') {
-        window.setupEventListeners = function() {};
-    }
-})();
-// ===== 自动补齐缺失的函数定义 =====
-(function() {
-    if (typeof simulateReply === 'undefined') {
-        window.simulateReply = function() {};
-    }
-    if (typeof initializeSession === 'undefined') {
-        window.initializeSession = function() {};
-    }
-    if (typeof setupEventListeners === 'undefined') {
-        window.setupEventListeners = function() {};
-    }
-})();
-if (typeof simulateReply === 'undefined') { window.simulateReply = function() {}; }
-if (typeof initializeSession === 'undefined') { window.initializeSession = function() {}; }
-if (typeof setupEventListeners === 'undefined') { window.setupEventListeners = function() {}; }
-if (typeof initializeSession === 'undefined') { window.initializeSession = function() {}; }
