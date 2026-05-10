@@ -2348,24 +2348,7 @@ function showModal(modalElement, focusElement = null) {
             }
         }
 
-window.initializeSession = async function() {
-    await migrateData();
 
-    const sessionsData = await localforage.getItem(`${APP_PREFIX}sessionList`);
-    sessionList = sessionsData || [];
-
-    const hash = window.location.hash.substring(1);
-    if (hash && sessionList.some(s => s.id === hash)) {
-        SESSION_ID = hash;
-    } else if (sessionList.length > 0) {
-        const lastId = await localforage.getItem(`${APP_PREFIX}lastSessionId`);
-        SESSION_ID = lastId && sessionList.some(s => s.id === lastId) ? lastId : sessionList[0].id;
-    } else {
-        SESSION_ID = await createNewSession(false);
-    }
-
-    await localforage.setItem(`${APP_PREFIX}lastSessionId`, SESSION_ID);
-}
 
 document.addEventListener('DOMContentLoaded', function() {
     var chatArea = document.querySelector('.main-chat-area');
