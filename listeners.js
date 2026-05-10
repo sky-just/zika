@@ -3215,15 +3215,9 @@ window.exitCollapseMode = function() {
 })();
 
 
-// ===== 自动补齐缺失的函数定义（只保留一份） =====
-(function() {
-    if (typeof simulateReply === 'undefined') {
-        window.simulateReply = function() {};
-    }
-    if (typeof initializeSession === 'undefined') {
-        window.initializeSession = function() {};
-    }
-    if (typeof setupEventListeners === 'undefined') {
-        window.setupEventListeners = function() {};
-    }
-})();
+
+
+// ===== 自动补齐缺失的函数定义 =====
+if (typeof simulateReply === 'undefined') { window.simulateReply = function() {}; }
+if (typeof initializeSession === 'undefined') { window.initializeSession = function() {}; }
+if (typeof setupEventListeners === 'undefined') { window.setupEventListeners = function() {}; }
