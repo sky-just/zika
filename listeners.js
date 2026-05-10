@@ -1462,7 +1462,10 @@ if (_cancelEnvEl) _cancelEnvEl.addEventListener('click', () => {
         }
 
 
-
+var sessionBtn = document.getElementById('session-manager-btn');
+if (sessionBtn) {
+    sessionBtn.addEventListener(...);
+}
         DOMElements.sessionModal.managerBtn.addEventListener('click', () => {
             renderSessionList(); showModal(DOMElements.sessionModal.modal);
         });
