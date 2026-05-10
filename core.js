@@ -2316,13 +2316,7 @@ function showModal(modalElement, focusElement = null) {
 
         async function migrateData() {
             const isMigrated = await localforage.getItem(APP_PREFIX + 'MIGRATION_V2_DONE');
-            if (isMigrated) return;
-
-            try {
-                const keys = Object.keys(localStorage);
-                for (const key of keys) {
-                    if (
-
+         
 document.addEventListener('DOMContentLoaded', function() {
     var chatArea = document.querySelector('.main-chat-area');
     var historyLoader = document.getElementById('history-loader');
