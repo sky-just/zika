@@ -2217,12 +2217,16 @@
 </div>
 
 <div id="dg-editor-modal" style="display:none;"></div>
-<!-- 核心层 -->
+<!-- 基础工具库（必须最先加载） -->
 <script src="config.js"></script>
 <script src="utils.js"></script>
-<script src="backup-engine.js"></script>
+
+<!-- 核心数据与状态 -->
 <script src="state.js"></script>
 <script src="core.js"></script>
+
+<!-- 备份引擎 -->
+<script src="backup-engine.js"></script>
 
 <!-- 功能模块 -->
 <script src="mood.js"></script>
@@ -2232,12 +2236,18 @@
 <script src="group-chat.js"></script>
 <script src="call.js"></script>
 
-<!-- 合并模块 -->
+<!-- 游戏与合并模块 -->
 <script src="games.js"></script>
 <script src="features.js"></script>
+
+<!-- 主程序 -->
 <script src="app.js"></script>
+
+<!-- 事件监听与引导 -->
 <script src="listeners.js"></script>
 <script src="onboarding.js"></script>
+
+<!-- 数据管理 -->
 <script src="data.js"></script>
 </body>
 </html>
