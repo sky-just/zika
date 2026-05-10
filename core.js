@@ -2349,7 +2349,6 @@ function showModal(modalElement, focusElement = null) {
         }
 
 
-
 document.addEventListener('DOMContentLoaded', function() {
     var chatArea = document.querySelector('.main-chat-area');
     var historyLoader = document.getElementById('history-loader');
@@ -2366,4 +2365,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         observer.observe(historyLoader);
     }
-}
+});
