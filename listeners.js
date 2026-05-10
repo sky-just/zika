@@ -3263,3 +3263,5 @@ window.exitCollapseMode = function() {
 })();
 if (typeof simulateReply === 'undefined') { window.simulateReply = function() {}; }
 if (typeof initializeSession === 'undefined') { window.initializeSession = function() {}; }
+if (typeof setupEventListeners === 'undefined') { window.setupEventListeners = function() {}; }
+if (typeof initializeSession === 'undefined') { window.initializeSession = function() {}; }
