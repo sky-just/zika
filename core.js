@@ -2341,11 +2341,7 @@ function showModal(modalElement, focusElement = null) {
                     }
                 }
                 
-                await localforage.setItem(APP_PREFIX + 'MIGRATION_V2_DONE', 'true');
-            } catch (e) {
-                console.error("数据迁移过程中发生严重错误:", e);
-                showNotification('数据迁移失败，部分旧数据可能丢失', 'error');
-            }
+              
         }
 
 
