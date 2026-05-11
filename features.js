@@ -1611,6 +1611,7 @@ window.tryShowDailyGreeting = function() {
         var modal = document.getElementById('daily-greeting-modal');
         if (modal) modal.classList.remove('hidden');
     } catch(e) { console.warn('Daily greeting show error:', e); }
+    };
     // ========== 组字卡管理面板 ==========
 function openComboManager() {
     const overlay = document.createElement('div');
