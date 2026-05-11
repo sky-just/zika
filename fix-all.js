@@ -1,14 +1,15 @@
-// fix-all.js —— 终极修复补丁
+// fix-all.js —— 终极修复补丁 v3
 (function() {
     'use strict';
-    console.log('[fix-all] 终极补丁已激活');
+    console.log('[fix-all] 终极补丁 v3 已激活');
 
-    // 1. 修复音乐播放器
+    // ===========================
+    // 1. 音乐播放器修复
+    // ===========================
     function fixMusicPlayer() {
         var player = document.getElementById('player');
         if (!player) return;
 
-        // ---- 展开按钮（修复大小写错误 + 逻辑增强） ----
         var miniView = document.getElementById('mini-view');
         if (miniView && !miniView._fixedMusic) {
             miniView._fixedMusic = true;
@@ -20,40 +21,30 @@
             });
         }
 
-        // ---- 歌单数据填充（解决空白问题） ----
         var playlist = document.getElementById('playlist');
         if (playlist && !playlist._fixedMusicData) {
             playlist._fixedMusicData = true;
-
-            // 如果歌单为空，写入默认歌曲
             if (!playlist.innerHTML.trim() || playlist.children.length === 0) {
                 var defaultSongs = [
                     { name: '告白の夜', artist: 'Ayasa', url: 'https://music.163.com/song/media/outer/url?id=1382596689.mp3' },
                     { name: '風の住む街', artist: '磯村由紀子', url: 'https://music.163.com/song/media/outer/url?id=22688479.mp3' },
                     { name: 'River Flows In You', artist: 'Yiruma', url: 'https://music.163.com/song/media/outer/url?id=26237342.mp3' }
                 ];
-
                 playlist.innerHTML = defaultSongs.map(function(song, index) {
                     return '<div class="playlist-item" data-index="' + index + '" data-url="' + song.url + '">' +
                                '<span class="playlist-item-title">' + song.name + '</span>' +
                                '<span class="playlist-item-artist">' + song.artist + '</span>' +
                            '</div>';
                 }).join('');
-
-                // 绑定点击播放事件
                 var items = playlist.querySelectorAll('.playlist-item');
                 for (var i = 0; i < items.length; i++) {
                     items[i].addEventListener('click', function() {
                         var url = this.getAttribute('data-url');
                         var title = this.querySelector('.playlist-item-title').textContent;
-                        if (url && typeof playSong === 'function') {
-                            playSong(url, title);
-                        }
+                        if (url && typeof playSong === 'function') playSong(url, title);
                     });
                 }
             }
-
-            // ---- 歌单展开/收起按钮 ----
             var listBtn = document.getElementById('list-btn');
             if (listBtn && !listBtn._fixedMusicList) {
                 listBtn._fixedMusicList = true;
@@ -64,7 +55,6 @@
             }
         }
 
-        // ---- 收起按钮 ----
         var minimizeBtn = document.getElementById('minimize-btn');
         if (minimizeBtn && !minimizeBtn._fixedMusicMin) {
             minimizeBtn._fixedMusicMin = true;
@@ -77,9 +67,10 @@
         }
     }
 
-    // 2. 修复组字卡面板按钮
+    // ===========================
+    // 2. 组字卡面板修复（核心改动）
+    // ===========================
     function fixComboPanel() {
-        // ---- 内部函数：刷新列表 ----
         function refreshComboList() {
             var list = document.getElementById('combo-list-inner');
             if (!list) return;
@@ -96,31 +87,41 @@
             }).join('');
         }
 
-        // ---- 从本地存储恢复数据 ----
         if (!window.comboCards || !Array.isArray(window.comboCards)) {
             try {
                 var saved = localStorage.getItem('comboCards');
                 window.comboCards = saved ? JSON.parse(saved) : [];
-            } catch (e) {
-                window.comboCards = [];
-            }
+            } catch (e) { window.comboCards = []; }
         }
 
-        // ---- 面板出现时自动刷新 ----
-        var panel = document.getElementById('combo-panel');
-        if (panel && !panel._fixedComboRefresh) {
-            panel._fixedComboRefresh = true;
-            var panelObserver = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.target.style.display !== 'none') {
+        // ★★★ 核心：每隔一段时间检查页面，如果发现空白组字卡页，自动替换为管理面板 ★★★
+        setInterval(function() {
+            // 查找所有可能是"空白组字卡内容区"的容器
+            var containers = document.querySelectorAll('.combo-blank, #combo-content, .tab-content-combo, [data-tab="combo"], .subpage-combo');
+            for (var i = 0; i < containers.length; i++) {
+                var c = containers[i];
+                // 如果这个容器可见，且内部没有 combo-panel
+                if (c.offsetParent !== null || window.getComputedStyle(c).display !== 'none') {
+                    var panel = document.getElementById('combo-panel');
+                    if (panel && !c.contains(panel)) {
+                        // 隐藏空白容器，显示管理面板
+                        c.innerHTML = '';
+                        c.appendChild(panel);
+                        panel.style.display = 'block';
                         refreshComboList();
                     }
-                });
-            });
-            panelObserver.observe(panel, { attributes: true, attributeFilter: ['style'] });
-        }
+                }
+            }
+            // 同时也直接检查 combo-panel 是否被 display:none 隐藏了
+            var panel = document.getElementById('combo-panel');
+            if (panel && panel.style.display === 'none') {
+                // 可能是被某些代码隐藏了，强制显示
+                panel.style.display = 'block';
+                refreshComboList();
+            }
+        }, 600);
 
-        // ---- 新建按钮 ----
+        // 新建按钮
         var addBtn = document.getElementById('add-combo-inner-btn');
         if (addBtn && !addBtn._fixedCombo) {
             addBtn._fixedCombo = true;
@@ -132,16 +133,14 @@
                     items: ['字卡A', '字卡B'],
                     separator: ' '
                 });
-                try {
-                    localStorage.setItem('comboCards', JSON.stringify(window.comboCards));
-                } catch (e) {}
+                try { localStorage.setItem('comboCards', JSON.stringify(window.comboCards)); } catch(e) {}
                 if (typeof throttledSaveData === 'function') throttledSaveData();
                 if (typeof showNotification === 'function') showNotification('新组合已添加', 'success');
-                refreshComboList(); // 立即刷新列表，这才是关键
+                refreshComboList();
             });
         }
 
-        // ---- 开关按钮 ----
+        // 开关按钮
         var toggle = document.getElementById('combo-enable-toggle');
         if (toggle && !toggle._fixedComboToggle) {
             toggle._fixedComboToggle = true;
@@ -151,62 +150,20 @@
             });
         }
 
-        // 首次刷新列表
         refreshComboList();
     }
 
-    // 3. 使用 MutationObserver 监听 DOM 变化，自动修复新出现的元素
+    // ===========================
+    // 3. 观察者 + 延迟执行
+    // ===========================
     var observer = new MutationObserver(function() {
         fixMusicPlayer();
         fixComboPanel();
     });
+    observer.observe(document.body, { childList: true, subtree: true });
 
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
+    setTimeout(function() { fixMusicPlayer(); fixComboPanel(); }, 1000);
+    setTimeout(function() { fixMusicPlayer(); fixComboPanel(); }, 3000);
 
-    // 4. 页面加载后延迟执行修复
-    setTimeout(function() {
-        fixMusicPlayer();
-        fixComboPanel();
-    }, 1000);
-
-    setTimeout(function() {
-        fixMusicPlayer();
-        fixComboPanel();
-    }, 3000);
-
-    console.log('[fix-all] 补丁就绪');
+    console.log('[fix-all] 补丁 v3 就绪');
 })();
-// ===== 强制修复：拦截“组字卡”功能入口，改为打开管理面板 =====
-setTimeout(function() {
-    // 查找所有可能代表“组字卡”功能入口的元素（文本匹配）
-    var allElements = document.querySelectorAll('div, li, a, button, span');
-    for (var i = 0; i < allElements.length; i++) {
-        var el = allElements[i];
-        // 只处理文本明确是“组字卡”且没有子元素的节点
-        if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) {
-            if (el.textContent.trim() === '组字卡') {
-                // 避免重复绑定
-                if (el._comboEntryFixed) continue;
-                el._comboEntryFixed = true;
-
-                // 劫持点击事件
-                el.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    var panel = document.getElementById('combo-panel');
-                    if (panel) {
-                        panel.style.display = 'block';
-                        // 刷新面板内容
-                        var list = document.getElementById('combo-list-inner');
-                        if (list && typeof refreshComboList === 'function') {
-                            refreshComboList();
-                        }
-                    }
-                });
-            }
-        }
-    }
-}, 800);
