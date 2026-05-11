@@ -59,14 +59,22 @@
     });
 
     console.log('🛡️ 终极补丁初始化完成，页面将继续加载...');
-    // 4. 补齐 initializeRandomUI
+// 4. 补齐 initializeRandomUI
 if (typeof window.initializeRandomUI === 'undefined') {
     window.initializeRandomUI = function() {
-        console.log('✅ initializeRandomUI 已补齐');
+        console.log('✅ 初始化成功！');
         var headerMotto = document.querySelector('.header-motto');
         if (headerMotto && typeof customMottos !== 'undefined' && customMottos.length > 0) {
             headerMotto.textContent = customMottos[Math.floor(Math.random() * customMottos.length)];
         }
     };
 }
+
+// 5. 补齐 initMusicPlayer
+if (typeof window.initMusicPlayer === 'undefined') {
+    window.initMusicPlayer = function() {
+        console.log('🎵 initMusicPlayer 已补齐（空函数）');
+    };
+}
+
 })();
