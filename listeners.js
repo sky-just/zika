@@ -163,7 +163,32 @@ if (typeof initMusicPlayer === 'undefined') {
 if (typeof checkStatusChange === 'undefined') {
     window.checkStatusChange = function() {};
 }
-
+// 强制修复组字卡面板内的新建按钮
+setTimeout(function() {
+    var addComboBtn = document.getElementById('add-combo-inner-btn');
+    if (addComboBtn && !addComboBtn._fixed) {
+        addComboBtn._fixed = true;
+        addComboBtn.addEventListener('click', function() {
+            if (!window.comboCards) window.comboCards = [];
+            window.comboCards.push({
+                id: Date.now(),
+                name: '新组合',
+                items: ['字卡A', '字卡B'],
+                separator: ' '
+            });
+            if (typeof throttledSaveData === 'function') throttledSaveData();
+            // 刷新列表
+            var list = document.getElementById('combo-list-inner');
+            if (list && typeof window.renderComboList === 'function') {
+                window.renderComboList();
+            } else if (list) {
+                var idx = window.comboCards.length - 1;
+                list.innerHTML += '<div style="padding:8px;background:var(--primary-bg);border-radius:8px;margin-bottom:6px;">✅ 已添加「新组合」</div>';
+            }
+            showNotification('新组合已添加', 'success');
+        });
+    }
+}, 1500);
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupEventListeners);
 } else {
