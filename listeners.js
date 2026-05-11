@@ -81,6 +81,34 @@ if (typeof initializeSession === 'undefined') {
         }
     };
 }
+// ===== 补齐所有缺失的初始化函数 =====
+if (typeof initializeSession === 'undefined') {
+    window.initializeSession = async function() {
+        if (!window.SESSION_ID) {
+            window.SESSION_ID = 'session_' + Date.now();
+        }
+    };
+}
+
+if (typeof initializeRandomUI === 'undefined') {
+    window.initializeRandomUI = function() {
+        // 设置默认顶部格言
+        var mottoEl = document.querySelector('.header-motto');
+        if (mottoEl) mottoEl.textContent = '✦ 与你同在 ✦';
+        // 设置输入框占位符
+        var inputEl = document.getElementById('message-input');
+        if (inputEl) inputEl.placeholder = '说点什么吧...';
+        console.log('✅ initializeRandomUI 已补齐');
+    };
+}
+
+if (typeof initMusicPlayer === 'undefined') {
+    window.initMusicPlayer = function() {};
+}
+
+if (typeof checkStatusChange === 'undefined') {
+    window.checkStatusChange = function() {};
+}
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupEventListeners);
 } else {
