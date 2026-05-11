@@ -1,7 +1,7 @@
-// fix-init.js —— 终极初始化补丁 v2
+// fix-init.js —— 终极初始化补丁 v3（最终版）
 (function() {
     'use strict';
-    console.log('🛡️ 终极补丁 v2 已激活');
+    console.log('🛡️ 终极补丁 v3 已激活');
 
     // 1. 补齐所有缺失函数
     var allFuncs = [
@@ -11,16 +11,23 @@
         'initModalListeners', 'initNewFeatureListeners', 'initDataManagementListeners',
         'initCoreListeners', 'manageAutoSendTimer', 'checkEnvelopeStatus',
         'initReplyLibraryListeners', 'setupAppearancePanelFrameSettings',
-        'initMoodListeners', 'initThemeSchemes'
+        'initMoodListeners', 'initThemeSchemes',
+        'showModal', 'hideModal'
     ];
     allFuncs.forEach(function(fn) {
         if (typeof window[fn] === 'undefined') {
-            window[fn] = function() {
-                if (fn === 'initializeSession') return Promise.resolve();
-            };
+            if (fn === 'showModal') {
+                window[fn] = function(m) { m.style.display = 'flex'; };
+            } else if (fn === 'hideModal') {
+                window[fn] = function(m) { m.style.display = 'none'; };
+            } else if (fn === 'initializeSession') {
+                window[fn] = function() { return Promise.resolve(); };
+            } else {
+                window[fn] = function() {};
+            }
         }
     });
-    console.log('✅ 所有缺失函数已补齐');
+    console.log('✅ 所有缺失函数已补齐（含 showModal / hideModal）');
 
     // 2. 强制关闭所有遮罩
     setTimeout(function() {
@@ -34,7 +41,7 @@
         console.log('🟢 遮罩已关闭');
     }, 600);
 
-    // 3. 创建全新的设置按钮（不依赖原网站任何逻辑）
+    // 3. 创建全新的设置按钮
     function createNewSettingsBtn() {
         var headerActions = document.querySelector('.header-actions');
         if (!headerActions) {
@@ -54,7 +61,6 @@
             e.stopPropagation();
             var modal = document.getElementById('settings-modal');
             if (modal) {
-                // 用最原始的方式强制显示，不依赖任何函数
                 modal.style.display = 'flex';
                 modal.style.zIndex = '99999';
                 var content = modal.querySelector('.modal-content');
@@ -62,11 +68,66 @@
                     content.style.opacity = '1';
                     content.style.transform = 'translateY(0) scale(1)';
                 }
+                // 确保设置面板内的子功能按钮有事件
+                bindSettingsInnerBtns();
             }
         });
 
         headerActions.appendChild(newBtn);
         console.log('✅ 新设置按钮已创建');
+    }
+
+    // 4. 强制绑定设置面板内所有功能按钮的点击事件
+    function bindSettingsInnerBtns() {
+        // appearance-settings → 外观设置弹窗
+        var appearanceBtn = document.getElementById('appearance-settings');
+        if (appearanceBtn && !appearanceBtn._patched) {
+            appearanceBtn._patched = true;
+            appearanceBtn.addEventListener('click', function() {
+                var settingsModal = document.getElementById('settings-modal');
+                var appearanceModal = document.getElementById('appearance-modal');
+                if (settingsModal) window.hideModal ? hideModal(settingsModal) : (settingsModal.style.display = 'none');
+                if (appearanceModal) window.showModal ? showModal(appearanceModal) : (appearanceModal.style.display = 'flex');
+            });
+        }
+
+        // chat-settings → 聊天设置弹窗
+        var chatBtn = document.getElementById('chat-settings');
+        if (chatBtn && !chatBtn._patched) {
+            chatBtn._patched = true;
+            chatBtn.addEventListener('click', function() {
+                var settingsModal = document.getElementById('settings-modal');
+                var chatModal = document.getElementById('chat-modal');
+                if (settingsModal) window.hideModal ? hideModal(settingsModal) : (settingsModal.style.display = 'none');
+                if (chatModal) window.showModal ? showModal(chatModal) : (chatModal.style.display = 'flex');
+            });
+        }
+
+        // advanced-settings → 高级功能弹窗
+        var advancedBtn = document.getElementById('advanced-settings');
+        if (advancedBtn && !advancedBtn._patched) {
+            advancedBtn._patched = true;
+            advancedBtn.addEventListener('click', function() {
+                var settingsModal = document.getElementById('settings-modal');
+                var advancedModal = document.getElementById('advanced-modal');
+                if (settingsModal) window.hideModal ? hideModal(settingsModal) : (settingsModal.style.display = 'none');
+                if (advancedModal) window.showModal ? showModal(advancedModal) : (advancedModal.style.display = 'flex');
+            });
+        }
+
+        // data-settings → 数据管理弹窗
+        var dataBtn = document.getElementById('data-settings');
+        if (dataBtn && !dataBtn._patched) {
+            dataBtn._patched = true;
+            dataBtn.addEventListener('click', function() {
+                var settingsModal = document.getElementById('settings-modal');
+                var dataModal = document.getElementById('data-modal');
+                if (settingsModal) window.hideModal ? hideModal(settingsModal) : (settingsModal.style.display = 'none');
+                if (dataModal) window.showModal ? showModal(dataModal) : (dataModal.style.display = 'flex');
+            });
+        }
+
+        console.log('✅ 设置面板子功能按钮已绑定');
     }
 
     if (document.readyState === 'loading') {
@@ -75,5 +136,5 @@
         createNewSettingsBtn();
     }
 
-    console.log('🛡️ 终极补丁 v2 初始化完成');
+    console.log('🛡️ 终极补丁 v3 初始化完成');
 })();
