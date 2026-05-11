@@ -102,16 +102,19 @@ const saveData = async () => {
 
 function renderMessages(preserveScroll = false) {
     const container = DOMElements.chatContainer;
-    const msgsToRender = messages.slice(Math.max(0, messages.length - displayedMessageCount));
+    const msgs = messages.slice(Math.max(0, messages.length - displayedMessageCount));
     DOMElements.emptyState.style.display = messages.length === 0 ? 'flex' : 'none';
     container.innerHTML = '';
-    const fragment = document.createDocumentFragment();
-    msgsToRender.forEach(msg => {
+
+    msgs.forEach(msg => {
         const wrapper = document.createElement('div');
         wrapper.className = `message-wrapper ${msg.sender === 'user' ? 'sent' : 'received'}`;
         wrapper.dataset.id = msg.id;
+
         const bubble = document.createElement('div');
         bubble.className = `message message-${msg.sender === 'user' ? 'sent' : 'received'} ${settings.bubbleStyle}`;
+
+        // 处理语音消息
         if (msg.type === 'voice' && msg.voiceData) {
             bubble.innerHTML = `<div class="message-voice" onclick="this.querySelector('audio').play()">
                 <button class="voice-play-btn"><i class="fas fa-play"></i></button>
@@ -123,12 +126,21 @@ function renderMessages(preserveScroll = false) {
             if (msg.image) bubble.innerHTML += `<img src="${msg.image}" style="max-width:200px;border-radius:12px;margin-top:5px;">`;
         }
         wrapper.appendChild(bubble);
-        fragment.appendChild(wrapper);
+
+        // 显示已读状态
+        if (msg.sender === 'user') {
+            const meta = document.createElement('div');
+            meta.className = 'message-meta';
+            meta.innerHTML = msg.status === 'read'
+                ? '<span class="read-receipt read"><i class="fas fa-check-double"></i></span>'
+                : '<span class="read-receipt"><i class="fas fa-check"></i></span>';
+            wrapper.appendChild(meta);
+        }
+
+        container.appendChild(wrapper);
     });
-    container.appendChild(fragment);
     if (!preserveScroll) container.scrollTop = container.scrollHeight;
 }
-
 const addMessage = (message) => {
     if (!(message.timestamp instanceof Date)) message.timestamp = new Date(message.timestamp);
     messages.push(message);
