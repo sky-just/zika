@@ -1,5 +1,4 @@
 // 核心应用逻辑
-
 function clearAllAppData() {
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;';
@@ -113,8 +112,16 @@ function renderMessages(preserveScroll = false) {
         wrapper.dataset.id = msg.id;
         const bubble = document.createElement('div');
         bubble.className = `message message-${msg.sender === 'user' ? 'sent' : 'received'} ${settings.bubbleStyle}`;
-        bubble.innerHTML = msg.text ? msg.text.replace(/\n/g, '<br>') : '';
-        if (msg.image) bubble.innerHTML += `<img src="${msg.image}" style="max-width:200px;border-radius:12px;margin-top:5px;">`;
+        if (msg.type === 'voice' && msg.voiceData) {
+            bubble.innerHTML = `<div class="message-voice" onclick="this.querySelector('audio').play()">
+                <button class="voice-play-btn"><i class="fas fa-play"></i></button>
+                <div class="voice-wave"><span></span><span></span><span></span><span></span><span></span></div>
+                <audio src="${msg.voiceData}" preload="auto"></audio>
+            </div>`;
+        } else {
+            bubble.innerHTML = msg.text ? msg.text.replace(/\n/g, '<br>') : '';
+            if (msg.image) bubble.innerHTML += `<img src="${msg.image}" style="max-width:200px;border-radius:12px;margin-top:5px;">`;
+        }
         wrapper.appendChild(bubble);
         fragment.appendChild(wrapper);
     });
@@ -207,8 +214,28 @@ window.simulateReply = function() {
     }
 };
 
-function showModal(modal) { if (modal) { modal.style.display = 'flex'; } }
-function hideModal(modal) { if (modal) { modal.style.display = 'none'; } }
+function showModal(modal) {
+    if (!modal) return;
+    modal.style.display = 'flex';
+    modal.style.zIndex = '99999';
+    var content = modal.querySelector('.modal-content');
+    if (content) {
+        content.style.opacity = '1';
+        content.style.transform = 'translateY(0) scale(1)';
+    }
+}
+
+function hideModal(modal) {
+    if (!modal) return;
+    var content = modal.querySelector('.modal-content');
+    if (content) {
+        content.style.opacity = '0';
+        content.style.transform = 'translateY(20px) scale(0.95)';
+    }
+    setTimeout(function() {
+        modal.style.display = 'none';
+    }, 300);
+}
 
 function updateUI() {
     document.documentElement.setAttribute('data-theme', settings.isDarkMode ? 'dark' : 'light');
