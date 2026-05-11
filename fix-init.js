@@ -109,13 +109,21 @@
     });
 
     // 7. 强制关闭所有遮罩层
-    setTimeout(function() {
-        var welcome = document.getElementById('welcome-animation');
-        if (welcome) { welcome.style.display = 'none'; welcome.classList.add('hidden'); }
-        var splash = document.getElementById('splash-declaration');
-        if (splash) { splash.style.display = 'none'; }
-        console.log('🟢 所有遮罩层已强制关闭');
-    }, 500);
-
+setTimeout(function() {
+    // 关闭欢迎动画
+    var welcome = document.getElementById('welcome-animation');
+    if (welcome) { welcome.style.display = 'none'; welcome.classList.add('hidden'); }
+    // 关闭声明页
+    var splash = document.getElementById('splash-declaration');
+    if (splash) { splash.style.display = 'none'; }
+    // 关闭引导遮罩
+    var tour = document.getElementById('tour-overlay');
+    if (tour) { tour.style.display = 'none'; }
+    // 移除 body 上可能阻止点击的类
+    document.body.classList.remove('no-scroll', 'overflow-hidden');
+    document.body.style.overflow = '';
+    document.body.style.pointerEvents = 'auto';
+    console.log('🟢 所有遮罩层已强制关闭');
+}, 800);
     console.log('🛡️ 终极补丁初始化完成');
 })();
