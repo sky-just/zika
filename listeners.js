@@ -4,10 +4,11 @@ function setupEventListeners() {
     if (settingsBtn) {
         settingsBtn.addEventListener('click', function() {
             var modal = document.getElementById('settings-modal');
-            if (modal) {
-                if (typeof showModal === 'function') showModal(modal);
-                else modal.style.display = 'flex';
-            }
+if (modal) {
+    modal.style.zIndex = '99999';
+    if (typeof showModal === 'function') showModal(modal);
+    else modal.style.display = 'flex';
+}
         });
     }
 
