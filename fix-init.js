@@ -56,4 +56,35 @@
     }, 600);
 
     console.log('🛡️ 最终补丁初始化完毕');
+    // 强制修复组字卡面板按钮
+setTimeout(function() {
+    var comboToggle = document.getElementById('combo-enable-toggle');
+    if (comboToggle) {
+        comboToggle.addEventListener('click', function() {
+            window.comboCardsEnabled = this.checked;
+            if (typeof throttledSaveData === 'function') throttledSaveData();
+        });
+    }
+
+    var addComboBtn = document.getElementById('add-combo-inner-btn');
+    if (addComboBtn) {
+        addComboBtn.addEventListener('click', function() {
+            if (!window.comboCards) window.comboCards = [];
+            window.comboCards.push({
+                id: Date.now(),
+                name: '新组合',
+                items: ['字卡A', '字卡B'],
+                separator: ' '
+            });
+            if (typeof throttledSaveData === 'function') throttledSaveData();
+            // 刷新列表
+            var list = document.getElementById('combo-list-inner');
+            if (list && typeof window.comboCards !== 'undefined') {
+                var idx = window.comboCards.length - 1;
+                list.innerHTML += '<div>✅ 已添加「新组合」</div>';
+            }
+            if (typeof showNotification === 'function') showNotification('新组合已添加', 'success');
+        });
+    }
+}, 1500);
 })();
