@@ -179,3 +179,34 @@
 
     console.log('[fix-all] 补丁就绪');
 })();
+// ===== 强制修复：拦截“组字卡”功能入口，改为打开管理面板 =====
+setTimeout(function() {
+    // 查找所有可能代表“组字卡”功能入口的元素（文本匹配）
+    var allElements = document.querySelectorAll('div, li, a, button, span');
+    for (var i = 0; i < allElements.length; i++) {
+        var el = allElements[i];
+        // 只处理文本明确是“组字卡”且没有子元素的节点
+        if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) {
+            if (el.textContent.trim() === '组字卡') {
+                // 避免重复绑定
+                if (el._comboEntryFixed) continue;
+                el._comboEntryFixed = true;
+
+                // 劫持点击事件
+                el.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    var panel = document.getElementById('combo-panel');
+                    if (panel) {
+                        panel.style.display = 'block';
+                        // 刷新面板内容
+                        var list = document.getElementById('combo-list-inner');
+                        if (list && typeof refreshComboList === 'function') {
+                            refreshComboList();
+                        }
+                    }
+                });
+            }
+        }
+    }
+}, 800);
