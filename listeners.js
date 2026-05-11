@@ -73,7 +73,14 @@ function setupEventListeners() {
         });
     });
 }
-
+// 补齐缺失的 initializeSession 函数
+if (typeof initializeSession === 'undefined') {
+    window.initializeSession = async function() {
+        if (!window.SESSION_ID) {
+            window.SESSION_ID = 'session_' + Date.now();
+        }
+    };
+}
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupEventListeners);
 } else {
