@@ -140,7 +140,25 @@ if (typeof initializeRandomUI === 'undefined') {
     };
 }
 if (typeof initMusicPlayer === 'undefined') {
-    window.initMusicPlayer = function() {};
+    window.initMusicPlayer = function() {
+        var player = document.getElementById('player');
+        if (!player) return;
+        
+        // 恢复音乐播放器的显示逻辑
+        var musicToggle = document.getElementById('music-player-toggle');
+        if (musicToggle && !musicToggle._fixed) {
+            musicToggle._fixed = true;
+            musicToggle.addEventListener('click', function() {
+                if (player.classList.contains('visible')) {
+                    player.classList.remove('visible');
+                    showNotification('音乐播放器已关闭', 'info');
+                } else {
+                    player.classList.add('visible');
+                    showNotification('音乐播放器已开启', 'success');
+                }
+            });
+        }
+    };
 }
 if (typeof checkStatusChange === 'undefined') {
     window.checkStatusChange = function() {};
