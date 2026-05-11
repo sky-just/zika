@@ -1,4 +1,4 @@
-// fix-init.js —— 最终稳定版
+// fix-init.js —— 最终稳定版（不再创建重复按钮）
 (function() {
     'use strict';
     console.log('🛡️ 最终补丁已激活');
@@ -54,87 +54,6 @@
         document.body.style.overflow = '';
         document.body.style.pointerEvents = 'auto';
     }, 600);
-
-    // ---------- 创建全新的设置按钮 ----------
-    function createSettingsBtn() {
-        var header = document.querySelector('.header-actions');
-        if (!header) { setTimeout(createSettingsBtn, 500); return; }
-
-        var btn = document.createElement('button');
-        btn.id = 'settings-btn-new';
-        btn.className = 'action-btn';
-        btn.title = '设置';
-        btn.innerHTML = '<i class="fas fa-cog"></i>';
-        btn.style.cssText = 'background:none;border:none;color:var(--text-secondary);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;';
-
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var modal = document.getElementById('settings-modal');
-            if (modal) {
-                window.showModal(modal);
-                bindSettingsInner();  // 确保子面板事件
-            }
-        });
-        header.appendChild(btn);
-        console.log('✅ 新设置按钮已就位');
-    }
-
-    // ---------- 强制绑定设置面板内所有功能 ----------
-    function bindSettingsInner() {
-        var pairs = [
-            ['appearance-settings', 'appearance-modal'],
-            ['chat-settings', 'chat-modal'],
-            ['advanced-settings', 'advanced-modal'],
-            ['data-settings', 'data-modal']
-        ];
-        pairs.forEach(function(pair) {
-            var trigger = document.getElementById(pair[0]);
-            var target  = document.getElementById(pair[1]);
-            if (!trigger || !target) return;
-            if (trigger._patched) return;
-            trigger._patched = true;
-            trigger.addEventListener('click', function(e) {
-                e.stopPropagation();
-                var settingsModal = document.getElementById('settings-modal');
-                if (settingsModal) window.hideModal(settingsModal);
-                window.showModal(target);
-            });
-        });
-
-        // 处理各子面板的“返回”按钮，让它们回到设置主面板
-        var backBtns = document.querySelectorAll('[id*="back-"], [id*="-back"]');
-        backBtns.forEach(function(btn) {
-            if (btn._patched) return;
-            btn._patched = true;
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                var parentModal = btn.closest('.modal');
-                if (parentModal) window.hideModal(parentModal);
-                var settingsModal = document.getElementById('settings-modal');
-                if (settingsModal) window.showModal(settingsModal);
-            });
-        });
-
-        // 处理关闭按钮（所有带 close 字样的按钮）
-        var closeBtns = document.querySelectorAll('.modal [id*="close"]');
-        closeBtns.forEach(function(btn) {
-            if (btn._patched) return;
-            btn._patched = true;
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                var parentModal = btn.closest('.modal');
-                if (parentModal) window.hideModal(parentModal);
-            });
-        });
-
-        console.log('✅ 设置面板子功能已绑定（含返回/关闭）');
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', createSettingsBtn);
-    } else {
-        createSettingsBtn();
-    }
 
     console.log('🛡️ 最终补丁初始化完毕');
 })();
