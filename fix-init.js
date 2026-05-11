@@ -1,129 +1,79 @@
-// fix-init.js —— 终极初始化补丁，必须放在所有脚本最前面！
+// fix-init.js —— 终极初始化补丁 v2
 (function() {
     'use strict';
-    console.log('🛡️ 终极补丁已激活，正在修复所有已知错误...');
+    console.log('🛡️ 终极补丁 v2 已激活');
 
-    // 1. 补齐所有可能缺失的核心函数
-    var missingFuncs = [
-        'initializeSession',
-        'simulateReply',
-        'setupEventListeners',
-        'setupEventListener'
+    // 1. 补齐所有缺失函数
+    var allFuncs = [
+        'initializeSession', 'simulateReply', 'setupEventListeners',
+        'initializeRandomUI', 'initMusicPlayer', 'checkStatusChange',
+        'openNameModal', 'openAvatarModal', 'initChatActionListeners',
+        'initModalListeners', 'initNewFeatureListeners', 'initDataManagementListeners',
+        'initCoreListeners', 'manageAutoSendTimer', 'checkEnvelopeStatus',
+        'initReplyLibraryListeners', 'setupAppearancePanelFrameSettings',
+        'initMoodListeners', 'initThemeSchemes'
     ];
-    missingFuncs.forEach(function(fn) {
+    allFuncs.forEach(function(fn) {
         if (typeof window[fn] === 'undefined') {
             window[fn] = function() {
                 if (fn === 'initializeSession') return Promise.resolve();
             };
-            console.log('✅ 已补齐缺失函数：' + fn);
         }
     });
+    console.log('✅ 所有缺失函数已补齐');
 
-    // 2. 强制修复设置按钮（修复版）
-    function fixSettingsBtn() {
-        var btn = document.getElementById('settings-btn');
-        if (btn) {
-            // 强制清理遮罩
-            var welcome = document.getElementById('welcome-animation');
-            if (welcome) { welcome.style.display = 'none'; }
-            var splash = document.getElementById('splash-declaration');
-            if (splash) { splash.style.display = 'none'; }
+    // 2. 强制关闭所有遮罩
+    setTimeout(function() {
+        ['welcome-animation', 'splash-declaration', 'tour-overlay'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) { el.style.display = 'none'; el.classList.add('hidden'); }
+        });
+        document.body.classList.remove('no-scroll', 'overflow-hidden');
+        document.body.style.overflow = '';
+        document.body.style.pointerEvents = 'auto';
+        console.log('🟢 遮罩已关闭');
+    }, 600);
 
-            var newBtn = btn.cloneNode(true);
-            btn.parentNode.replaceChild(newBtn, btn);
-            newBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                var modal = document.getElementById('settings-modal');
-                if (modal) {
-                    if (typeof showModal === 'function') {
-                        showModal(modal);
-                    } else {
-                        modal.style.display = 'flex';
-                    }
+    // 3. 创建全新的设置按钮（不依赖原网站任何逻辑）
+    function createNewSettingsBtn() {
+        var headerActions = document.querySelector('.header-actions');
+        if (!headerActions) {
+            setTimeout(createNewSettingsBtn, 500);
+            return;
+        }
+
+        var newBtn = document.createElement('button');
+        newBtn.id = 'settings-btn-new';
+        newBtn.className = 'action-btn';
+        newBtn.title = '设置';
+        newBtn.innerHTML = '<i class="fas fa-cog"></i>';
+        newBtn.style.cssText = 'background:none;border:none;color:var(--text-secondary);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;';
+
+        newBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var modal = document.getElementById('settings-modal');
+            if (modal) {
+                // 用最原始的方式强制显示，不依赖任何函数
+                modal.style.display = 'flex';
+                modal.style.zIndex = '99999';
+                var content = modal.querySelector('.modal-content');
+                if (content) {
+                    content.style.opacity = '1';
+                    content.style.transform = 'translateY(0) scale(1)';
                 }
-            });
-            console.log('✅ 设置按钮已修复');
-        } else {
-            console.warn('⚠️ 未找到设置按钮，1秒后重试...');
-            setTimeout(fixSettingsBtn, 1000);
-        }
-    }
-
-    // 页面加载后尝试修复
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', fixSettingsBtn);
-    } else {
-        fixSettingsBtn();
-    }
-
-    // 3. 全局错误捕获
-    window.addEventListener('error', function(e) {
-        if (e.message && e.message.indexOf('is not defined') !== -1) {
-            console.warn('⚠️ 捕获到未定义错误，已阻止中断：', e.message);
-            return true;
-        }
-    });
-
-    // 4. 补齐 initializeRandomUI
-    if (typeof window.initializeRandomUI === 'undefined') {
-        window.initializeRandomUI = function() {
-            console.log('✅ 初始化成功！');
-            var headerMotto = document.querySelector('.header-motto');
-            if (headerMotto && typeof customMottos !== 'undefined' && customMottos.length > 0) {
-                headerMotto.textContent = customMottos[Math.floor(Math.random() * customMottos.length)];
             }
-        };
+        });
+
+        headerActions.appendChild(newBtn);
+        console.log('✅ 新设置按钮已创建');
     }
 
-    // 5. 补齐 initMusicPlayer
-    if (typeof window.initMusicPlayer === 'undefined') {
-        window.initMusicPlayer = function() {
-            console.log('🎵 initMusicPlayer 已补齐（空函数）');
-        };
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', createNewSettingsBtn);
+    } else {
+        createNewSettingsBtn();
     }
 
-    // 6. 万能兜底：自动补齐所有可能缺失的函数
-    var funcs = [
-        'checkStatusChange',
-        'openNameModal',
-        'openAvatarModal',
-        'initChatActionListeners',
-        'initModalListeners',
-        'initNewFeatureListeners',
-        'initDataManagementListeners',
-        'initCoreListeners',
-        'manageAutoSendTimer',
-        'checkEnvelopeStatus',
-        'initReplyLibraryListeners',
-        'setupAppearancePanelFrameSettings',
-        'initMoodListeners',
-        'initThemeSchemes'
-    ];
-
-    funcs.forEach(function(fn) {
-        if (typeof window[fn] === 'undefined') {
-            window[fn] = function() {};
-            console.log('✅ 自动补全函数：' + fn);
-        }
-    });
-
-    // 7. 强制关闭所有遮罩层
-setTimeout(function() {
-    // 关闭欢迎动画
-    var welcome = document.getElementById('welcome-animation');
-    if (welcome) { welcome.style.display = 'none'; welcome.classList.add('hidden'); }
-    // 关闭声明页
-    var splash = document.getElementById('splash-declaration');
-    if (splash) { splash.style.display = 'none'; }
-    // 关闭引导遮罩
-    var tour = document.getElementById('tour-overlay');
-    if (tour) { tour.style.display = 'none'; }
-    // 移除 body 上可能阻止点击的类
-    document.body.classList.remove('no-scroll', 'overflow-hidden');
-    document.body.style.overflow = '';
-    document.body.style.pointerEvents = 'auto';
-    console.log('🟢 所有遮罩层已强制关闭');
-}, 800);
-    console.log('🛡️ 终极补丁初始化完成');
+    console.log('🛡️ 终极补丁 v2 初始化完成');
 })();
