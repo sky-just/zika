@@ -1,45 +1,18 @@
-// listeners.js - 完整修复版
+// listeners.js - 修复精简版
 function setupEventListeners() {
+    // 设置按钮
     var settingsBtn = document.getElementById('settings-btn');
     if (settingsBtn) {
         settingsBtn.addEventListener('click', function() {
             var modal = document.getElementById('settings-modal');
             if (modal) {
-                if (typeof showModal === 'function') {
-                    showModal(modal);
-                } else {
-                    modal.style.display = 'flex';
-                }
+                if (typeof showModal === 'function') showModal(modal);
+                else modal.style.display = 'flex';
             }
         });
     }
 
-    var chatContainer = document.querySelector('.chat-container');
-    if (chatContainer) {
-        chatContainer.addEventListener('scroll', function() {
-            if (chatContainer.scrollTop < 50 && typeof loadMoreHistory === 'function') {
-                loadMoreHistory();
-            }
-        });
-    }
-
-    var sendBtn = document.getElementById('send-btn');
-    if (sendBtn) {
-        sendBtn.addEventListener('click', function() {
-            if (typeof sendMessage === 'function') sendMessage();
-        });
-    }
-
-    var messageInput = document.getElementById('message-input');
-    if (messageInput) {
-        messageInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                if (typeof sendMessage === 'function') sendMessage();
-            }
-        });
-    }
-
+    // 主题切换按钮
     var themeToggle = document.getElementById('theme-toggle');
     if (themeToggle) {
         themeToggle.addEventListener('click', function() {
@@ -51,22 +24,67 @@ function setupEventListeners() {
         });
     }
 
-    var partnerName = document.getElementById('partner-name');
-    if (partnerName) {
-        partnerName.addEventListener('click', function() {
-            if (typeof openNameModal === 'function') openNameModal(true);
+    // 发送按钮
+    var sendBtn = document.getElementById('send-btn');
+    if (sendBtn) {
+        sendBtn.addEventListener('click', function() {
+            if (typeof sendMessage === 'function') sendMessage();
         });
     }
 
-    var myName = document.getElementById('my-name');
-    if (myName) {
-        myName.addEventListener('click', function() {
-            if (typeof openNameModal === 'function') openNameModal(false);
+    // 输入框回车发送
+    var msgInput = document.getElementById('message-input');
+    if (msgInput) {
+        msgInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (typeof sendMessage === 'function') sendMessage();
+            }
         });
     }
+
+    // 外观、聊天、高级、数据管理按钮
+    var subPairs = [
+        ['appearance-settings', 'appearance-modal'],
+        ['chat-settings', 'chat-modal'],
+        ['advanced-settings', 'advanced-modal'],
+        ['data-settings', 'data-modal']
+    ];
+    subPairs.forEach(function(pair) {
+        var trigger = document.getElementById(pair[0]);
+        var target = document.getElementById(pair[1]);
+        if (trigger && target) {
+            trigger.addEventListener('click', function() {
+                var settingsModal = document.getElementById('settings-modal');
+                if (settingsModal) {
+                    if (typeof hideModal === 'function') hideModal(settingsModal);
+                    else settingsModal.style.display = 'none';
+                }
+                if (typeof showModal === 'function') showModal(target);
+                else target.style.display = 'flex';
+            });
+        }
+    });
+
+    // 通用返回按钮
+    document.querySelectorAll('[id*="back-"], [id*="-back"]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var parentModal = btn.closest('.modal');
+            if (parentModal && typeof hideModal === 'function') hideModal(parentModal);
+            var settingsModal = document.getElementById('settings-modal');
+            if (settingsModal && typeof showModal === 'function') showModal(settingsModal);
+        });
+    });
+
+    // 通用关闭按钮
+    document.querySelectorAll('.modal [id*="close"]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var parentModal = btn.closest('.modal');
+            if (parentModal && typeof hideModal === 'function') hideModal(parentModal);
+        });
+    });
 }
 
-// 初始化：页面加载完成后执行
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupEventListeners);
 } else {
