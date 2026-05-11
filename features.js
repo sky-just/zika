@@ -1737,6 +1737,7 @@ function openComboManager() {
         // 自动打开编辑新组合
         const index = window.comboCards.length - 1;
         setTimeout(() => editComboCard(index), 100);
+    }
     });
 
     // 关闭
