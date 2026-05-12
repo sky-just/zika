@@ -1,4 +1,23 @@
-﻿if (typeof customReplyGroups === 'undefined') window.customReplyGroups = [];
+const LIBRARY_CONFIG = {
+    reply: {
+        title: "回复库管理",
+        tabs: [
+            { id: 'custom', name: '主字卡', mode: 'list' },
+            { id: 'emojis', name: 'Emoji', mode: 'grid' },
+            { id: 'stickers', name: '表情库', mode: 'grid' }
+        ]
+    },
+    atmosphere: {
+        title: "氛围感配置",
+        tabs: [
+            { id: 'pokes', name: '拍一拍', mode: 'list' },
+            { id: 'statuses', name: '对方状态', mode: 'list' },
+            { id: 'mottos', name: '顶部格言', mode: 'list' },
+            { id: 'intros', name: '开场动画', mode: 'list' }
+        ]
+    }
+};
+if (typeof customReplyGroups === 'undefined') window.customReplyGroups = [];
 if (typeof replyGroupsEnabled === 'undefined') window.replyGroupsEnabled = false;
 if (typeof customPokeGroups === 'undefined') window.customPokeGroups = [];
 if (typeof customStatusGroups === 'undefined') window.customStatusGroups = [];
