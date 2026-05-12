@@ -1,5 +1,5 @@
-// fix-conflict.js —— 最终桥梁版（只负责正确触发原生函数）
-console.log('[fix-conflict] 最终桥梁版已加载！时间戳: 202605132000');
+// fix-conflict.js —— 最终完整接管版
+console.log('[fix-conflict] 完整接管版已加载！时间戳: 202605132200');
 
 (function() {
     'use strict';
@@ -47,21 +47,25 @@ console.log('[fix-conflict] 最终桥梁版已加载！时间戳: 202605132000')
         }
     }
 
-    // 2. 侧边栏桥梁 —— 唯一任务：正确切换 currentMajorTab 并触发原生渲染
-    function createSidebarBridge() {
+    // 2. 完全接管侧边栏
+    function takeOverSidebar() {
         var sidebar = document.querySelector('.modal-sidebar');
-        if (!sidebar || sidebar._bridgeFixed) return;
-        sidebar._bridgeFixed = true;
+        if (!sidebar || sidebar._taken) return;
+        sidebar._taken = true;
 
-        sidebar.addEventListener('click', function(e) {
+        // 移除所有旧的事件（通过克隆节点）
+        var newSidebar = sidebar.cloneNode(true);
+        sidebar.parentNode.replaceChild(newSidebar, sidebar);
+
+        // 绑定新事件
+        newSidebar.addEventListener('click', function(e) {
             var btn = e.target.closest('.sidebar-btn');
             if (!btn) return;
 
-            // 更新按钮样式
-            sidebar.querySelectorAll('.sidebar-btn').forEach(function(b) { b.classList.remove('active'); });
+            // 更新样式
+            newSidebar.querySelectorAll('.sidebar-btn').forEach(function(b) { b.classList.remove('active'); });
             btn.classList.add('active');
 
-            // 获取选项卡 ID
             var major = btn.getAttribute('data-major');
 
             // 公告特殊处理
@@ -70,13 +74,9 @@ console.log('[fix-conflict] 最终桥梁版已加载！时间戳: 202605132000')
                 return;
             }
 
-            // 强制更新全局状态变量（这些变量是原生函数正确渲染的前提）
-            if (typeof window.currentMajorTab !== 'undefined') {
-                window.currentMajorTab = major;
-            }
-            if (typeof window.currentSubTab !== 'undefined') {
-                window.currentSubTab = 'custom'; // 默认显示第一个子选项卡
-            }
+            // 强制设置全局状态
+            window.currentMajorTab = major;
+            window.currentSubTab = 'custom';
 
             // 触发原生渲染
             if (typeof window.renderReplyLibrary === 'function') {
@@ -85,28 +85,68 @@ console.log('[fix-conflict] 最终桥梁版已加载！时间戳: 202605132000')
         });
     }
 
-    // 3. 音乐播放器桥梁 —— 唯一任务：确保原生 initMusicPlayer 被执行
-    function createMusicBridge() {
+    // 3. 完全接管音乐播放器
+    function takeOverMusic() {
         var player = document.getElementById('player');
-        if (!player) return;
+        if (!player || player._taken) return;
+        player._taken = true;
 
-        // 如果播放器已经初始化成功，就不要再干预
+        // 填充歌单（如果为空）
         var playlist = document.getElementById('playlist');
-        if (playlist && playlist.children.length > 0) return;
-
-        // 尝试执行原生初始化，最多重试5次
-        var retries = 0;
-        var maxRetries = 5;
-        function tryInit() {
-            if (retries >= maxRetries) return;
-            retries++;
-            if (typeof initMusicPlayer === 'function') {
-                initMusicPlayer();
-            } else {
-                setTimeout(tryInit, 800);
-            }
+        if (playlist && playlist.children.length === 0) {
+            var songs = [
+                { name: '告白の夜', artist: 'Ayasa', url: 'https://music.163.com/song/media/outer/url?id=1382596689.mp3' },
+                { name: '風の住む街', artist: '磯村由紀子', url: 'https://music.163.com/song/media/outer/url?id=22688479.mp3' },
+                { name: 'River Flows In You', artist: 'Yiruma', url: 'https://music.163.com/song/media/outer/url?id=26237342.mp3' }
+            ];
+            playlist.innerHTML = songs.map(function(song, i) {
+                return '<div class="playlist-item" data-url="' + song.url + '"><div class="song-info"><div class="song-title-row">' + song.name + '</div><div class="song-sub-row">' + song.artist + '</div></div></div>';
+            }).join('');
         }
-        setTimeout(tryInit, 500);
+
+        // 修复歌单按钮
+        var listBtn = document.getElementById('list-btn');
+        if (listBtn) {
+            listBtn.onclick = function(e) {
+                e.stopPropagation();
+                var rect = player.getBoundingClientRect();
+                playlist.style.position = 'fixed';
+                playlist.style.left = rect.left + 'px';
+                playlist.style.top = (rect.top + 155) + 'px';
+                playlist.classList.toggle('active');
+            };
+        }
+
+        // 修复收起按钮（让播放器收成小圆圈）
+        var minimizeBtn = document.getElementById('minimize-btn');
+        if (minimizeBtn) {
+            minimizeBtn.onclick = function(e) {
+                e.stopPropagation();
+                player.classList.add('collapsed');
+                if (playlist) playlist.classList.remove('active');
+            };
+        }
+
+        // 修复迷你窗口展开
+        var miniView = document.getElementById('mini-view');
+        if (miniView) {
+            miniView.onclick = function(e) {
+                e.stopPropagation();
+                if (player.classList.contains('collapsed')) {
+                    player.classList.remove('collapsed');
+                }
+            };
+        }
+
+        // 点击外部关闭歌单
+        document.addEventListener('click', function(e) {
+            if (playlist && playlist.classList.contains('active') &&
+                !playlist.contains(e.target) &&
+                !e.target.closest('#list-btn') &&
+                !e.target.closest('#player')) {
+                playlist.classList.remove('active');
+            }
+        });
     }
 
     // 4. 手帐修复
@@ -119,9 +159,9 @@ console.log('[fix-conflict] 最终桥梁版已加载！时间戳: 202605132000')
         }
     }
 
-    // 执行所有桥梁
+    // 执行
     setTimeout(bindTopButtons, 600);
-    setTimeout(createSidebarBridge, 800);
-    setTimeout(createMusicBridge, 1200);
+    setTimeout(takeOverSidebar, 1000);
+    setTimeout(takeOverMusic, 1200);
     setTimeout(fixMoodModule, 2000);
 })();
