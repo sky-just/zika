@@ -108,4 +108,20 @@
     setTimeout(runAll, 800);
     setTimeout(runAll, 2000);
     setTimeout(runAll, 4000);
+    // === 6. 强制重新初始化手帐模块 ===
+function fixMoodModule() {
+    // 等待 mood.js 完全加载
+    if (typeof initMoodListeners === 'function') {
+        initMoodListeners();
+        if (typeof renderMoodCalendar === 'function') {
+            renderMoodCalendar();
+        }
+    } else {
+        // 如果还没加载，等 500ms 再试
+        setTimeout(fixMoodModule, 500);
+    }
+}
+
+// 延迟触发，确保所有 JS 文件已加载
+setTimeout(fixMoodModule, 2000);
 })();
