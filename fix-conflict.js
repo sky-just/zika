@@ -1,5 +1,5 @@
-// fix-conflict.js —— 完全独立版 (不依赖 reply-library)
-console.log('[fix-conflict] 完全独立版已加载！时间戳: 202605122200');
+// fix-conflict.js —— 完全独立版 v2 (精准侧边栏 + 音乐兜底)
+console.log('[fix-conflict] 完全独立版 v2 已加载！时间戳: 202605122300');
 
 (function() {
     'use strict';
@@ -47,42 +47,80 @@ console.log('[fix-conflict] 完全独立版已加载！时间戳: 202605122200')
         }
     }
 
-    // 2. 完全独立的侧边栏逻辑 (不再调用任何 reply-library 的函数)
+    // 2. 完全独立的侧边栏逻辑（内部维护状态）
     function setupIndependentSidebar() {
         var sidebar = document.querySelector('.modal-sidebar');
         if (!sidebar || sidebar._independentFixed) return;
         sidebar._independentFixed = true;
 
+        // 内部状态
+        var currentTab = 'reply'; // 默认在回复库
+        var currentSubTab = 'custom'; // 默认子选项卡
+
+        // 初始化：显示回复库的内容（尝试使用原库函数，如果失败就显示占位）
+        tryShowReplyContent();
+
         sidebar.addEventListener('click', function(e) {
             var btn = e.target.closest('.sidebar-btn');
             if (!btn) return;
 
-            // 更新 UI 样式
+            // 更新按钮样式
             sidebar.querySelectorAll('.sidebar-btn').forEach(function(b) { b.classList.remove('active'); });
             btn.classList.add('active');
 
-            var major = btn.getAttribute('data-major');
-            var contentArea = document.getElementById('custom-replies-list');
-            var announcementPanel = document.getElementById('announcement-panel');
-            var titleEl = document.getElementById('cr-modal-title');
+            // 获取点击的选项卡
+            currentTab = btn.getAttribute('data-major');
+            currentSubTab = 'custom'; // 重置子选项卡
 
-            // 根据点击的选项卡，切换内容和标题
-            if (major === 'announcement') {
-                // 显示公告面板
-                if (contentArea) contentArea.style.display = 'none';
-                if (announcementPanel) announcementPanel.style.display = 'block';
-                if (titleEl) titleEl.textContent = '今日公告配置';
+            // 根据选项卡显示内容
+            if (currentTab === 'announcement') {
+                showAnnouncementPanel();
             } else {
-                // 显示普通内容区，并根据选项卡显示不同提示
-                if (announcementPanel) announcementPanel.style.display = 'none';
-                if (contentArea) {
-                    contentArea.style.display = 'block';
-                    contentArea.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary);">' +
-                        (major === 'reply' ? '回复库' : '氛围感') + '内容区域<br><span style="font-size:12px;">请通过高级功能管理对应内容</span></div>';
-                }
-                if (titleEl) titleEl.textContent = major === 'reply' ? '回复库管理' : '氛围感配置';
+                tryShowReplyContent();
             }
         });
+    }
+
+    function tryShowReplyContent() {
+        var listArea = document.getElementById('custom-replies-list');
+        var annPanel = document.getElementById('announcement-panel');
+        var titleEl = document.getElementById('cr-modal-title');
+
+        // 隐藏公告面板
+        if (annPanel) annPanel.style.display = 'none';
+
+        // 尝试使用原库函数渲染
+        if (typeof window.renderReplyLibrary === 'function') {
+            window.currentMajorTab = currentTab;
+            window.currentSubTab = currentSubTab;
+            try {
+                window.renderReplyLibrary();
+                return; // 成功，直接返回
+            } catch(e) {
+                console.warn('[fix-conflict] 原库渲染失败，使用占位内容:', e);
+            }
+        }
+
+        // 备用占位内容
+        if (listArea) {
+            listArea.style.display = 'block';
+            var tabName = currentTab === 'reply' ? '回复库' : '氛围感';
+            listArea.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary);">' +
+                '<div style="font-size:48px;margin-bottom:16px;">📋</div>' +
+                '<div style="font-size:16px;font-weight:600;margin-bottom:8px;">' + tabName + '</div>' +
+                '<div style="font-size:12px;">内容正在加载中，或请通过下方按钮新增</div></div>';
+        }
+        if (titleEl) titleEl.textContent = currentTab === 'reply' ? '回复库管理' : '氛围感配置';
+    }
+
+    function showAnnouncementPanel() {
+        var listArea = document.getElementById('custom-replies-list');
+        var annPanel = document.getElementById('announcement-panel');
+        var titleEl = document.getElementById('cr-modal-title');
+
+        if (listArea) listArea.style.display = 'none';
+        if (annPanel) annPanel.style.display = 'block';
+        if (titleEl) titleEl.textContent = '今日公告配置';
     }
 
     // 3. 音乐播放器最后兜底（保留）
