@@ -1,4 +1,4 @@
-// fix-all.js —— 最终纯净版 (不做多余修补，只做兜底)
+// fix-all.js —— 纯净增强版（强制恢复音乐功能）
 (function() {
     'use strict';
 
@@ -7,7 +7,25 @@
         window._backupCriticalData = function() {};
     }
 
-    // 1. 侧边栏按钮修复（氛围感、公告）
+    // 1. 强制恢复原生音乐播放器初始化
+    function forceInitMusic() {
+        // 如果原生的 initMusicPlayer 存在，就强制重新执行一次
+        if (typeof initMusicPlayer === 'function') {
+            // 清除可能残留的错误状态
+            var listBtn = document.getElementById('list-btn');
+            if (listBtn && listBtn._forceBound) {
+                // 恢复被替换的按钮
+                var parent = listBtn.parentNode;
+                var newBtn = listBtn.cloneNode(true);
+                parent.replaceChild(newBtn, listBtn);
+                delete newBtn._forceBound;
+            }
+            // 重新初始化
+            initMusicPlayer();
+        }
+    }
+
+    // 2. 侧边栏按钮修复
     function fixSidebar() {
         var buttons = document.querySelectorAll('.modal-sidebar .sidebar-btn');
         buttons.forEach(function(btn) {
@@ -29,8 +47,7 @@
         });
     }
 
-    // 2. 移除对所有功能的修补，让原版 initMusicPlayer 等正常运作
-    // 只保留迷你窗口的展开修复
+    // 3. 音乐迷你窗口展开
     function fixMiniView() {
         var miniView = document.getElementById('mini-view');
         var player = document.getElementById('player');
@@ -45,6 +62,9 @@
         }
     }
 
+    // 延迟执行，确保其他 JS 文件已加载
+    setTimeout(forceInitMusic, 1500);
+    setTimeout(forceInitMusic, 3500);
     setTimeout(fixMiniView, 800);
     setTimeout(fixMiniView, 2000);
     setTimeout(fixSidebar, 1200);
