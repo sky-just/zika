@@ -1,15 +1,15 @@
-// fix-conflict.js —— 最终版（强制修复自定义回复 + 音乐兜底）
-console.log('[fix-conflict] 最终版已加载！时间戳: 202605122100');
+// fix-conflict.js —— 完全独立版 (不依赖 reply-library)
+console.log('[fix-conflict] 完全独立版已加载！时间戳: 202605122200');
 
 (function() {
     'use strict';
 
-    // 备份函数
+    // 0. 备份函数
     if (typeof window._backupCriticalData === 'undefined') {
         window._backupCriticalData = function() {};
     }
 
-    // 顶部按钮
+    // 1. 顶部按钮
     function bindTopButtons() {
         var dgBtn = document.getElementById('daily-greeting-btn');
         if (dgBtn && !dgBtn._fixed) {
@@ -47,38 +47,45 @@ console.log('[fix-conflict] 最终版已加载！时间戳: 202605122100');
         }
     }
 
-    // 自定义回复强制修复
-    function forceFixReplies() {
+    // 2. 完全独立的侧边栏逻辑 (不再调用任何 reply-library 的函数)
+    function setupIndependentSidebar() {
         var sidebar = document.querySelector('.modal-sidebar');
-        if (!sidebar) return;
+        if (!sidebar || sidebar._independentFixed) return;
+        sidebar._independentFixed = true;
 
         sidebar.addEventListener('click', function(e) {
             var btn = e.target.closest('.sidebar-btn');
             if (!btn) return;
 
+            // 更新 UI 样式
+            sidebar.querySelectorAll('.sidebar-btn').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+
             var major = btn.getAttribute('data-major');
+            var contentArea = document.getElementById('custom-replies-list');
+            var announcementPanel = document.getElementById('announcement-panel');
+            var titleEl = document.getElementById('cr-modal-title');
 
-            // 强制更新全局状态变量
-            if (typeof window.currentMajorTab !== 'undefined') {
-                window.currentMajorTab = major;
-            }
-            if (typeof window.currentSubTab !== 'undefined') {
-                window.currentSubTab = 'custom';
-            }
-
-            // 重新渲染
-            if (typeof window.renderReplyLibrary === 'function') {
-                window.renderReplyLibrary();
-            }
-
-            // 额外保险：直接调用渲染函数
-            if (major === 'announcement' && typeof window.switchToAnnouncementPanel === 'function') {
-                window.switchToAnnouncementPanel();
+            // 根据点击的选项卡，切换内容和标题
+            if (major === 'announcement') {
+                // 显示公告面板
+                if (contentArea) contentArea.style.display = 'none';
+                if (announcementPanel) announcementPanel.style.display = 'block';
+                if (titleEl) titleEl.textContent = '今日公告配置';
+            } else {
+                // 显示普通内容区，并根据选项卡显示不同提示
+                if (announcementPanel) announcementPanel.style.display = 'none';
+                if (contentArea) {
+                    contentArea.style.display = 'block';
+                    contentArea.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary);">' +
+                        (major === 'reply' ? '回复库' : '氛围感') + '内容区域<br><span style="font-size:12px;">请通过高级功能管理对应内容</span></div>';
+                }
+                if (titleEl) titleEl.textContent = major === 'reply' ? '回复库管理' : '氛围感配置';
             }
         });
     }
 
-    // 音乐播放器最后兜底
+    // 3. 音乐播放器最后兜底（保留）
     function musicLastResort() {
         var playlist = document.getElementById('playlist');
         var listBtn = document.getElementById('list-btn');
@@ -86,8 +93,7 @@ console.log('[fix-conflict] 最终版已加载！时间戳: 202605122100');
 
         if (!playlist || !listBtn || !player) return;
 
-        // 如果歌单完全是空的，并且原生播放器似乎没初始化成功
-        if (playlist.children.length === 0 && (typeof initMusicPlayer !== 'function' || player.classList.contains('no-init'))) {
+        if (playlist.children.length === 0) {
             console.warn('[fix-conflict] 音乐播放器未成功加载，启用兜底歌单');
             var songs = [
                 { name: '告白の夜', artist: 'Ayasa', url: 'https://music.163.com/song/media/outer/url?id=1382596689.mp3' },
@@ -112,8 +118,6 @@ console.log('[fix-conflict] 最终版已加载！时间戳: 202605122100');
                 playlist.style.top = (rect.top + 155) + 'px';
                 playlist.classList.toggle('active');
             };
-
-            // 点击外部关闭歌单
             document.addEventListener('click', function(e) {
                 if (playlist.classList.contains('active') &&
                     !playlist.contains(e.target) && !e.target.closest('#list-btn')) {
@@ -123,7 +127,7 @@ console.log('[fix-conflict] 最终版已加载！时间戳: 202605122100');
         }
     }
 
-    // 手帐修复
+    // 4. 手帐修复
     function fixMoodModule() {
         if (typeof initMoodListeners === 'function') {
             initMoodListeners();
@@ -134,7 +138,7 @@ console.log('[fix-conflict] 最终版已加载！时间戳: 202605122100');
     }
 
     setTimeout(bindTopButtons, 600);
-    setTimeout(forceFixReplies, 1000);
+    setTimeout(setupIndependentSidebar, 1000);
     setTimeout(musicLastResort, 1500);
     setTimeout(fixMoodModule, 2000);
 })();
