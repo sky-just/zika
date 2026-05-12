@@ -1,5 +1,5 @@
-// fix-conflict.js —— 最终完整版 v3（包含 switchToAnnouncementPanel）
-console.log('[fix-conflict] 最终完整版 v3 已加载！时间戳: 202605132300');
+// fix-conflict.js —— 最终精准版 v4
+console.log('[fix-conflict] 最终精准版 v4 已加载！时间戳: 202605132400');
 
 (function() {
     'use strict';
@@ -9,7 +9,7 @@ console.log('[fix-conflict] 最终完整版 v3 已加载！时间戳: 2026051323
         window._backupCriticalData = function() {};
     }
 
-    // ★★★ 定义缺失的 switchToAnnouncementPanel ★★★
+    // 1. 缺失函数定义
     if (typeof window.switchToAnnouncementPanel === 'undefined') {
         window.switchToAnnouncementPanel = function() {
             var listArea = document.getElementById('custom-replies-list');
@@ -19,7 +19,7 @@ console.log('[fix-conflict] 最终完整版 v3 已加载！时间戳: 2026051323
         };
     }
 
-    // 1. 顶部按钮
+    // 2. 顶部按钮
     function bindTopButtons() {
         var dgBtn = document.getElementById('daily-greeting-btn');
         if (dgBtn && !dgBtn._fixed) {
@@ -57,8 +57,8 @@ console.log('[fix-conflict] 最终完整版 v3 已加载！时间戳: 2026051323
         }
     }
 
-    // 2. 完全接管侧边栏
-    function takeOverSidebar() {
+    // 3. 侧边栏精准修复
+    function fixSidebar() {
         var sidebar = document.querySelector('.modal-sidebar');
         if (!sidebar || sidebar._taken) return;
         sidebar._taken = true;
@@ -70,47 +70,73 @@ console.log('[fix-conflict] 最终完整版 v3 已加载！时间戳: 2026051323
             var btn = e.target.closest('.sidebar-btn');
             if (!btn) return;
 
+            // 更新 UI
             newSidebar.querySelectorAll('.sidebar-btn').forEach(function(b) { b.classList.remove('active'); });
             btn.classList.add('active');
 
             var major = btn.getAttribute('data-major');
 
-            if (major === 'announcement' && typeof window.switchToAnnouncementPanel === 'function') {
-                window.switchToAnnouncementPanel();
+            // 公告特殊处理
+            if (major === 'announcement') {
+                if (typeof window.switchToAnnouncementPanel === 'function') {
+                    window.switchToAnnouncementPanel();
+                }
                 return;
             }
 
+            // 设置正确的子选项卡
             window.currentMajorTab = major;
-            window.currentSubTab = 'custom';
+            window.currentSubTab = (major === 'reply') ? 'custom' : 'pokes';
 
+            // 确保公告面板隐藏
+            var annPanel = document.getElementById('announcement-panel');
+            var listArea = document.getElementById('custom-replies-list');
+            if (annPanel) annPanel.style.display = 'none';
+            if (listArea) listArea.style.display = 'block';
+
+            // 触发渲染
             if (typeof window.renderReplyLibrary === 'function') {
                 window.renderReplyLibrary();
             }
         });
+
+        // 默认触发一次回复库渲染
+        setTimeout(function() {
+            var replyBtn = newSidebar.querySelector('.sidebar-btn[data-major="reply"]');
+            if (replyBtn) replyBtn.click();
+        }, 300);
     }
 
-    // 3. 完全接管音乐播放器
-    function takeOverMusic() {
+    // 4. 音乐播放器精准修复
+    function fixMusic() {
         var player = document.getElementById('player');
         if (!player || player._taken) return;
         player._taken = true;
 
         var playlist = document.getElementById('playlist');
-        if (playlist && playlist.children.length === 0) {
+
+        // 填充歌单
+        function fillPlaylist() {
+            if (!playlist) return;
+            if (playlist.children.length > 0) return; // 已有内容，不重复填充
             var songs = [
                 { name: '告白の夜', artist: 'Ayasa', url: 'https://music.163.com/song/media/outer/url?id=1382596689.mp3' },
                 { name: '風の住む街', artist: '磯村由紀子', url: 'https://music.163.com/song/media/outer/url?id=22688479.mp3' },
                 { name: 'River Flows In You', artist: 'Yiruma', url: 'https://music.163.com/song/media/outer/url?id=26237342.mp3' }
             ];
             playlist.innerHTML = songs.map(function(song, i) {
-                return '<div class="playlist-item" data-url="' + song.url + '"><div class="song-info"><div class="song-title-row">' + song.name + '</div><div class="song-sub-row">' + song.artist + '</div></div></div>';
+                return '<div class="playlist-item" data-url="' + song.url + '">' +
+                    '<div class="song-info"><div class="song-title-row">' + song.name + '</div>' +
+                    '<div class="song-sub-row">' + song.artist + '</div></div></div>';
             }).join('');
         }
 
+        // 歌单按钮
         var listBtn = document.getElementById('list-btn');
         if (listBtn) {
             listBtn.onclick = function(e) {
                 e.stopPropagation();
+                fillPlaylist(); // 每次点击都确保歌单有内容
                 var rect = player.getBoundingClientRect();
                 playlist.style.position = 'fixed';
                 playlist.style.left = rect.left + 'px';
@@ -119,8 +145,10 @@ console.log('[fix-conflict] 最终完整版 v3 已加载！时间戳: 2026051323
             };
         }
 
+        // 收起按钮（已经好了，保留）
         var minimizeBtn = document.getElementById('minimize-btn');
-        if (minimizeBtn) {
+        if (minimizeBtn && !minimizeBtn._fixed) {
+            minimizeBtn._fixed = true;
             minimizeBtn.onclick = function(e) {
                 e.stopPropagation();
                 player.classList.add('collapsed');
@@ -128,8 +156,10 @@ console.log('[fix-conflict] 最终完整版 v3 已加载！时间戳: 2026051323
             };
         }
 
+        // 迷你窗口展开
         var miniView = document.getElementById('mini-view');
-        if (miniView) {
+        if (miniView && !miniView._fixed) {
+            miniView._fixed = true;
             miniView.onclick = function(e) {
                 e.stopPropagation();
                 if (player.classList.contains('collapsed')) {
@@ -138,6 +168,7 @@ console.log('[fix-conflict] 最终完整版 v3 已加载！时间戳: 2026051323
             };
         }
 
+        // 点击外部关闭歌单
         document.addEventListener('click', function(e) {
             if (playlist && playlist.classList.contains('active') &&
                 !playlist.contains(e.target) &&
@@ -148,7 +179,7 @@ console.log('[fix-conflict] 最终完整版 v3 已加载！时间戳: 2026051323
         });
     }
 
-    // 4. 手帐修复
+    // 5. 手帐修复
     function fixMoodModule() {
         if (typeof initMoodListeners === 'function') {
             initMoodListeners();
@@ -159,7 +190,7 @@ console.log('[fix-conflict] 最终完整版 v3 已加载！时间戳: 2026051323
     }
 
     setTimeout(bindTopButtons, 600);
-    setTimeout(takeOverSidebar, 1000);
-    setTimeout(takeOverMusic, 1200);
+    setTimeout(fixSidebar, 1000);
+    setTimeout(fixMusic, 1200);
     setTimeout(fixMoodModule, 2000);
 })();
