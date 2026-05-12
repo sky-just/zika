@@ -1,5 +1,5 @@
-// fix-conflict.js —— 纯净独立版 (独立内容管理入口)
-console.log('[fix-conflict] 纯净独立版已加载！');
+// fix-conflict.js —— 最终完整版
+console.log('[fix-conflict] 最终完整版已加载！时间戳: 20260514');
 
 (function() {
     'use strict';
@@ -9,12 +9,14 @@ console.log('[fix-conflict] 纯净独立版已加载！');
         window._backupCriticalData = function() {};
     }
 
-    // 函数定义
+    // 缺失函数定义
     if (typeof window.switchToAnnouncementPanel === 'undefined') {
-        window.switchToAnnouncementPanel = function() {};
-    }
-    if (typeof window.renderReplyLibrary === 'undefined') {
-        window.renderReplyLibrary = function() {};
+        window.switchToAnnouncementPanel = function() {
+            var listArea = document.getElementById('custom-replies-list');
+            var annPanel = document.getElementById('announcement-panel');
+            if (listArea) listArea.style.display = 'none';
+            if (annPanel) annPanel.style.display = 'block';
+        };
     }
 
     // 顶部按钮
@@ -55,8 +57,18 @@ console.log('[fix-conflict] 纯净独立版已加载！');
         }
     }
 
-    // 音乐播放器接管
-    function takeOverMusic() {
+    // 手帐修复
+    function fixMoodModule() {
+        if (typeof initMoodListeners === 'function') {
+            initMoodListeners();
+            if (typeof renderMoodCalendar === 'function') renderMoodCalendar();
+        } else {
+            setTimeout(fixMoodModule, 500);
+        }
+    }
+
+    // 音乐播放器兜底
+    function musicFallback() {
         var player = document.getElementById('player');
         if (!player || player._taken) return;
         player._taken = true;
@@ -69,12 +81,15 @@ console.log('[fix-conflict] 纯净独立版已加载！');
                 { name: 'River Flows In You', artist: 'Yiruma', url: 'https://music.163.com/song/media/outer/url?id=26237342.mp3' }
             ];
             playlist.innerHTML = songs.map(function(song, i) {
-                return '<div class="playlist-item" data-url="' + song.url + '"><div class="song-info"><div class="song-title-row">' + song.name + '</div><div class="song-sub-row">' + song.artist + '</div></div></div>';
+                return '<div class="playlist-item" data-url="' + song.url + '">' +
+                    '<div class="song-info"><div class="song-title-row">' + song.name + '</div>' +
+                    '<div class="song-sub-row">' + song.artist + '</div></div></div>';
             }).join('');
         }
 
         var listBtn = document.getElementById('list-btn');
-        if (listBtn) {
+        if (listBtn && !listBtn._fixed) {
+            listBtn._fixed = true;
             listBtn.onclick = function(e) {
                 e.stopPropagation();
                 var rect = player.getBoundingClientRect();
@@ -105,30 +120,22 @@ console.log('[fix-conflict] 纯净独立版已加载！');
                 }
             };
         }
+
+        document.addEventListener('click', function(e) {
+            if (playlist && playlist.classList.contains('active') &&
+                !playlist.contains(e.target) &&
+                !e.target.closest('#list-btn') &&
+                !e.target.closest('#player')) {
+                playlist.classList.remove('active');
+            }
+        });
     }
 
-    // 独立的“内容管理”入口
-    function injectStandaloneManager() {
-        var target = document.querySelector('#advanced-modal .settings-item-list');
-        if (!target || document.getElementById('standalone-manager-btn')) return;
-
-        var entry = document.createElement('div');
-        entry.id = 'standalone-manager-btn';
-        entry.className = 'settings-item';
-        entry.innerHTML = '<i class="fas fa-folder-open"></i><span>内容管理</span>';
-        entry.onclick = function() {
-            hideModal(document.getElementById('advanced-modal'));
-            openStandaloneManager();
-        };
-        target.appendChild(entry);
-    }
-
+    // 独立内容管理面板
     window.openStandaloneManager = function() {
         var overlay = document.createElement('div');
-        overlay.id = 'standalone-overlay';
         overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:var(--secondary-bg);display:flex;flex-direction:column;';
-
-        overlay.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border-color);"><h3>内容管理</h3><button onclick="document.getElementById(\'standalone-overlay\').remove()" style="background:none;border:none;font-size:24px;color:var(--text-secondary);cursor:pointer;">✕</button></div>' +
+        overlay.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border-color);"><h3>内容管理</h3><button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;font-size:24px;color:var(--text-secondary);cursor:pointer;">✕</button></div>' +
             '<div style="display:flex;flex:1;overflow:hidden;">' +
                 '<div style="width:80px;border-right:1px solid var(--border-color);padding:10px 0;display:flex;flex-direction:column;gap:5px;">' +
                     '<button class="standalone-tab active" data-tab="replies" style="background:none;border:none;padding:12px 8px;font-size:14px;cursor:pointer;color:var(--accent-color);">字卡</button>' +
@@ -148,9 +155,14 @@ console.log('[fix-conflict] 纯净独立版已加载！');
 
             var content = document.getElementById('standalone-content');
             if (tabId === 'replies') showRepliesTab(content);
-            else if (tabId === 'atmosphere') showAtmosphereTab(content);
-            else if (tabId === 'announcement') showAnnouncementTab(content);
-            else if (tabId === 'combo') showComboTab(content);
+            else if (tabId === 'atmosphere') content.innerHTML = '<h4>氛围感配置</h4><p>拍一拍、对方状态、格言等</p><p style="color:var(--text-secondary);">可通过原自定义回复管理。</p>';
+            else if (tabId === 'announcement') content.innerHTML = '<h4>公告配置</h4><p style="color:var(--text-secondary);">可通过原自定义回复公告选项卡管理。</p>';
+            else if (tabId === 'combo') {
+                content.innerHTML = '<h4>组字卡管理</h4><button id="open-combo-btn" style="padding:10px 20px;background:var(--accent-color);color:white;border:none;border-radius:8px;cursor:pointer;">打开组字卡管理面板</button>';
+                content.querySelector('#open-combo-btn').onclick = function() {
+                    if (typeof openComboManager === 'function') openComboManager();
+                };
+            }
         }
 
         function showRepliesTab(container) {
@@ -181,21 +193,6 @@ console.log('[fix-conflict] 纯净独立版已加载！');
             });
         }
 
-        function showAtmosphereTab(container) {
-            container.innerHTML = '<h4>氛围感配置</h4><p>拍一拍、对方状态、格言等</p><p style="color:var(--text-secondary);">该功能可通过原自定义回复管理。</p>';
-        }
-
-        function showAnnouncementTab(container) {
-            container.innerHTML = '<h4>公告配置</h4><p style="color:var(--text-secondary);">可通过原自定义回复公告选项卡管理。</p>';
-        }
-
-        function showComboTab(container) {
-            container.innerHTML = '<h4>组字卡管理</h4><button id="open-combo-btn" style="padding:10px 20px;background:var(--accent-color);color:white;border:none;border-radius:8px;cursor:pointer;">打开组字卡管理面板</button>';
-            container.querySelector('#open-combo-btn').onclick = function() {
-                if (typeof openComboManager === 'function') openComboManager();
-            };
-        }
-
         overlay.querySelectorAll('.standalone-tab').forEach(function(btn) {
             btn.onclick = function() { switchTab(this.getAttribute('data-tab')); };
         });
@@ -203,18 +200,8 @@ console.log('[fix-conflict] 纯净独立版已加载！');
         switchTab('replies');
     };
 
-    // 手帐修复
-    function fixMoodModule() {
-        if (typeof initMoodListeners === 'function') {
-            initMoodListeners();
-            if (typeof renderMoodCalendar === 'function') renderMoodCalendar();
-        } else {
-            setTimeout(fixMoodModule, 500);
-        }
-    }
-
+    // 执行
     setTimeout(bindTopButtons, 600);
-    setTimeout(takeOverMusic, 1200);
-    setTimeout(injectStandaloneManager, 1500);
     setTimeout(fixMoodModule, 2000);
+    setTimeout(musicFallback, 1500);
 })();
