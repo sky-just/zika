@@ -18,25 +18,7 @@ const LIBRARY_CONFIG = {
     }
 };
 // ==== 自定义回复库配置 ====
-const LIBRARY_CONFIG = {
-    reply: {
-        title: "回复库管理",
-        tabs: [
-            { id: 'custom', name: '主字卡', mode: 'list' },
-            { id: 'emojis', name: 'Emoji', mode: 'grid' },
-            { id: 'stickers', name: '表情库', mode: 'grid' }
-        ]
-    },
-    atmosphere: {
-        title: "氛围感配置",
-        tabs: [
-            { id: 'pokes', name: '拍一拍', mode: 'list' },
-            { id: 'statuses', name: '对方状态', mode: 'list' },
-            { id: 'mottos', name: '顶部格言', mode: 'list' },
-            { id: 'intros', name: '开场动画', mode: 'list' }
-        ]
-    }
-};
+
 if (typeof customReplyGroups === 'undefined') window.customReplyGroups = [];
 if (typeof replyGroupsEnabled === 'undefined') window.replyGroupsEnabled = false;
 if (typeof customPokeGroups === 'undefined') window.customPokeGroups = [];
@@ -115,6 +97,25 @@ const ICONS = {
 
 // ─── 共享样式：只注入一次，避免每张卡片各塞一个 <style> ───────────────────
 (function _injectReplyLibStyles() {
+    const LIBRARY_CONFIG = {
+    reply: {
+        title: "回复库管理",
+        tabs: [
+            { id: 'custom', name: '主字卡', mode: 'list' },
+            { id: 'emojis', name: 'Emoji', mode: 'grid' },
+            { id: 'stickers', name: '表情库', mode: 'grid' }
+        ]
+    },
+    atmosphere: {
+        title: "氛围感配置",
+        tabs: [
+            { id: 'pokes', name: '拍一拍', mode: 'list' },
+            { id: 'statuses', name: '对方状态', mode: 'list' },
+            { id: 'mottos', name: '顶部格言', mode: 'list' },
+            { id: 'intros', name: '开场动画', mode: 'list' }
+        ]
+    }
+};
     if (document.getElementById('rl-shared-styles')) return;
     const s = document.createElement('style');
     s.id = 'rl-shared-styles';
