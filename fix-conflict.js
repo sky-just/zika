@@ -1,5 +1,5 @@
-// fix-conflict.js —— 终极修复 + 缓存验证
-console.log('[fix-conflict] 新修复文件已成功加载！时间戳: 202605121900');
+// fix-conflict.js —— 终极修复 v3 (全局配置 + 音乐兜底)
+console.log('[fix-conflict] v3 已加载！时间戳: 202605122000');
 
 (function() {
     'use strict';
@@ -47,34 +47,65 @@ console.log('[fix-conflict] 新修复文件已成功加载！时间戳: 20260512
         }
     }
 
-    // 音乐播放器初始化（带重试）
-    function initMusicWithRetry(attempts) {
-        if (attempts === undefined) attempts = 0;
-        if (attempts > 5) {
-            console.warn('[fix-conflict] 音乐播放器初始化重试已达上限');
-            return;
+    // 音乐播放器兜底数据 + 歌单按钮
+    function fixMusicPlayer() {
+        var player = document.getElementById('player');
+        if (!player) return;
+
+        // 迷你窗口展开
+        var miniView = document.getElementById('mini-view');
+        if (miniView && !miniView._fixed) {
+            miniView._fixed = true;
+            miniView.onclick = function() {
+                if (player.classList.contains('collapsed')) {
+                    player.classList.remove('collapsed');
+                }
+            };
         }
-        if (typeof initMusicPlayer === 'function') {
-            console.log('[fix-conflict] 正在初始化音乐播放器，尝试次数:', attempts + 1);
-            initMusicPlayer();
-        } else {
-            console.warn('[fix-conflict] initMusicPlayer 尚未就绪，1000ms后重试...');
-            setTimeout(function() { initMusicWithRetry(attempts + 1); }, 1000);
+
+        // 歌单按钮强制绑定
+        var listBtn = document.getElementById('list-btn');
+        var playlist = document.getElementById('playlist');
+        if (listBtn && playlist && !listBtn._fixMusic) {
+            listBtn._fixMusic = true;
+            listBtn.onclick = function(e) {
+                e.stopPropagation();
+                var rect = player.getBoundingClientRect();
+                playlist.style.position = 'fixed';
+                playlist.style.left = rect.left + 'px';
+                playlist.style.top = (rect.top + 155) + 'px';
+                playlist.classList.toggle('active');
+            };
+
+            // 如果歌单为空，填充一些默认歌曲
+            if (playlist.children.length === 0) {
+                var songs = [
+                    { name: '告白の夜', artist: 'Ayasa', url: 'https://music.163.com/song/media/outer/url?id=1382596689.mp3' },
+                    { name: '風の住む街', artist: '磯村由紀子', url: 'https://music.163.com/song/media/outer/url?id=22688479.mp3' },
+                    { name: 'River Flows In You', artist: 'Yiruma', url: 'https://music.163.com/song/media/outer/url?id=26237342.mp3' }
+                ];
+                playlist.innerHTML = songs.map(function(song, i) {
+                    return '<div class="playlist-item" data-index="' + i + '" data-url="' + song.url + '">' +
+                               '<div class="song-info"><div class="song-title-row">' + song.name + '</div>' +
+                               '<div class="song-sub-row">' + song.artist + '</div></div></div>';
+                }).join('');
+            }
         }
+
+        // 点击外部关闭歌单
+        document.addEventListener('click', function(e) {
+            if (playlist && playlist.classList.contains('active') &&
+                !playlist.contains(e.target) && !e.target.closest('#list-btn')) {
+                playlist.classList.remove('active');
+            }
+        });
     }
 
-    // 侧边栏修复（带重试）
-    function bindSidebarWithRetry(attempts) {
-        if (attempts === undefined) attempts = 0;
-        if (attempts > 5) return;
+    // 侧边栏修复
+    function bindSidebar() {
         var sidebar = document.querySelector('.modal-sidebar');
-        if (!sidebar) {
-            setTimeout(function() { bindSidebarWithRetry(attempts + 1); }, 800);
-            return;
-        }
-        if (sidebar._fixed) return;
+        if (!sidebar || sidebar._fixed) return;
         sidebar._fixed = true;
-        console.log('[fix-conflict] 侧边栏事件已绑定');
         sidebar.addEventListener('click', function(e) {
             var btn = e.target.closest('.sidebar-btn');
             if (!btn) return;
@@ -103,9 +134,8 @@ console.log('[fix-conflict] 新修复文件已成功加载！时间戳: 20260512
         }
     }
 
-    // 执行
     setTimeout(bindTopButtons, 600);
-    setTimeout(function() { initMusicWithRetry(0); }, 1200);
-    setTimeout(function() { bindSidebarWithRetry(0); }, 1000);
+    setTimeout(fixMusicPlayer, 1000);
+    setTimeout(bindSidebar, 1200);
     setTimeout(fixMoodModule, 2000);
 })();
