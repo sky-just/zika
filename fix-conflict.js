@@ -1,5 +1,5 @@
-// fix-conflict.js —— 最终完整版
-console.log('[fix-conflict] 最终完整版已加载！时间戳: 20260514');
+// fix-conflict.js —— 最终整合版
+console.log('[fix-conflict] 最终整合版已加载！');
 
 (function() {
     'use strict';
@@ -67,52 +67,15 @@ console.log('[fix-conflict] 最终完整版已加载！时间戳: 20260514');
         }
     }
 
-    // 音乐播放器兜底
-    function musicFallback() {
+    // 音乐播放器：不再填充歌单，只修复按钮并尝试让原生初始化运行
+    function fixMusicPlayer() {
         var player = document.getElementById('player');
-        if (!player || player._taken) return;
-        player._taken = true;
+        if (!player) return;
 
-        var playlist = document.getElementById('playlist');
-        if (playlist && playlist.children.length === 0) {
-            var songs = [
-                { name: '告白の夜', artist: 'Ayasa', url: 'https://music.163.com/song/media/outer/url?id=1382596689.mp3' },
-                { name: '風の住む街', artist: '磯村由紀子', url: 'https://music.163.com/song/media/outer/url?id=22688479.mp3' },
-                { name: 'River Flows In You', artist: 'Yiruma', url: 'https://music.163.com/song/media/outer/url?id=26237342.mp3' }
-            ];
-            playlist.innerHTML = songs.map(function(song, i) {
-                return '<div class="playlist-item" data-url="' + song.url + '">' +
-                    '<div class="song-info"><div class="song-title-row">' + song.name + '</div>' +
-                    '<div class="song-sub-row">' + song.artist + '</div></div></div>';
-            }).join('');
-        }
-
-        var listBtn = document.getElementById('list-btn');
-        if (listBtn && !listBtn._fixed) {
-            listBtn._fixed = true;
-            listBtn.onclick = function(e) {
-                e.stopPropagation();
-                var rect = player.getBoundingClientRect();
-                playlist.style.position = 'fixed';
-                playlist.style.left = rect.left + 'px';
-                playlist.style.top = (rect.top + 155) + 'px';
-                playlist.classList.toggle('active');
-            };
-        }
-
-        var minimizeBtn = document.getElementById('minimize-btn');
-        if (minimizeBtn && !minimizeBtn._fixed) {
-            minimizeBtn._fixed = true;
-            minimizeBtn.onclick = function(e) {
-                e.stopPropagation();
-                player.classList.add('collapsed');
-                if (playlist) playlist.classList.remove('active');
-            };
-        }
-
+        // 迷你窗口展开/收起
         var miniView = document.getElementById('mini-view');
-        if (miniView && !miniView._fixed) {
-            miniView._fixed = true;
+        if (miniView && !miniView._fixMusic) {
+            miniView._fixMusic = true;
             miniView.onclick = function(e) {
                 e.stopPropagation();
                 if (player.classList.contains('collapsed')) {
@@ -121,12 +84,69 @@ console.log('[fix-conflict] 最终完整版已加载！时间戳: 20260514');
             };
         }
 
-        document.addEventListener('click', function(e) {
-            if (playlist && playlist.classList.contains('active') &&
-                !playlist.contains(e.target) &&
-                !e.target.closest('#list-btn') &&
-                !e.target.closest('#player')) {
-                playlist.classList.remove('active');
+        var minimizeBtn = document.getElementById('minimize-btn');
+        if (minimizeBtn && !minimizeBtn._fixMusic) {
+            minimizeBtn._fixMusic = true;
+            minimizeBtn.onclick = function(e) {
+                e.stopPropagation();
+                player.classList.add('collapsed');
+                var pl = document.getElementById('playlist');
+                if (pl) pl.classList.remove('active');
+            };
+        }
+
+        // 尝试让原生 initMusicPlayer 执行
+        setTimeout(function() {
+            if (typeof initMusicPlayer === 'function') {
+                try {
+                    initMusicPlayer();
+                } catch(e) {
+                    console.warn('[fix-conflict] 原生音乐初始化失败，启用备用歌单');
+                    fillPlaylistFallback();
+                }
+            } else {
+                fillPlaylistFallback();
+            }
+        }, 1000);
+    }
+
+    // 备用歌单填充（仅当原生失败时）
+    function fillPlaylistFallback() {
+        var playlist = document.getElementById('playlist');
+        if (!playlist || playlist.children.length > 0) return;
+        var songs = [
+            { name: '告白の夜', artist: 'Ayasa', url: 'https://music.163.com/song/media/outer/url?id=1382596689.mp3' },
+            { name: '風の住む街', artist: '磯村由紀子', url: 'https://music.163.com/song/media/outer/url?id=22688479.mp3' },
+            { name: 'River Flows In You', artist: 'Yiruma', url: 'https://music.163.com/song/media/outer/url?id=26237342.mp3' }
+        ];
+        playlist.innerHTML = songs.map(function(song, i) {
+            return '<div class="playlist-item" data-url="' + song.url + '">' +
+                '<div class="song-info"><div class="song-title-row">' + song.name + '</div>' +
+                '<div class="song-sub-row">' + song.artist + '</div></div></div>';
+        }).join('');
+    }
+
+    // 核心：撤掉 old 内容管理入口的旧监听器，只留我们的新面板
+    function fixContentEntry() {
+        var oldEntry = document.getElementById('custom-replies-function');
+        if (!oldEntry) return;
+
+        // 克隆并替换，以移除所有旧的事件监听器
+        var newEntry = oldEntry.cloneNode(true);
+        oldEntry.parentNode.replaceChild(newEntry, oldEntry);
+
+        // 绑定新事件：只打开独立面板，并强制隐藏旧弹窗
+        newEntry.addEventListener('click', function(e) {
+            e.stopImmediatePropagation(); // 阻止其他监听器
+            e.preventDefault();
+
+            // 隐藏旧弹窗
+            var oldModal = document.getElementById('custom-replies-modal');
+            if (oldModal) oldModal.style.display = 'none';
+
+            // 打开独立面板
+            if (typeof openStandaloneManager === 'function') {
+                openStandaloneManager();
             }
         });
     }
@@ -155,7 +175,7 @@ console.log('[fix-conflict] 最终完整版已加载！时间戳: 20260514');
 
             var content = document.getElementById('standalone-content');
             if (tabId === 'replies') showRepliesTab(content);
-            else if (tabId === 'atmosphere') content.innerHTML = '<h4>氛围感配置</h4><p>拍一拍、对方状态、格言等</p><p style="color:var(--text-secondary);">可通过原自定义回复管理。</p>';
+            else if (tabId === 'atmosphere') content.innerHTML = '<h4>氛围感配置</h4><p>拍一拍、对方状态、格言等</p>';
             else if (tabId === 'announcement') content.innerHTML = '<h4>公告配置</h4><p style="color:var(--text-secondary);">可通过原自定义回复公告选项卡管理。</p>';
             else if (tabId === 'combo') {
                 content.innerHTML = '<h4>组字卡管理</h4><button id="open-combo-btn" style="padding:10px 20px;background:var(--accent-color);color:white;border:none;border-radius:8px;cursor:pointer;">打开组字卡管理面板</button>';
@@ -203,5 +223,6 @@ console.log('[fix-conflict] 最终完整版已加载！时间戳: 20260514');
     // 执行
     setTimeout(bindTopButtons, 600);
     setTimeout(fixMoodModule, 2000);
-    setTimeout(musicFallback, 1500);
+    setTimeout(fixMusicPlayer, 800);
+    setTimeout(fixContentEntry, 1200);
 })();
