@@ -435,3 +435,38 @@ function openComboManager() {
 
     refreshList();
 }
+// ===== 顶部按钮函数（如果缺失则补上） =====
+if (typeof window.reopenDailyGreeting === 'undefined') {
+    window.reopenDailyGreeting = function() {
+        try {
+            if (typeof _buildDailyGreeting === 'function') _buildDailyGreeting();
+            var modal = document.getElementById('daily-greeting-modal');
+            if (modal) {
+                modal.style.opacity = '0';
+                modal.classList.remove('hidden');
+                requestAnimationFrame(function() {
+                    modal.style.transition = 'opacity 0.3s ease';
+                    modal.style.opacity = '1';
+                });
+            }
+        } catch(e) { console.warn('reopenDailyGreeting error:', e); }
+    };
+}
+
+if (typeof window.closeDailyGreeting === 'undefined') {
+    window.closeDailyGreeting = function() {
+        try {
+            var modal = document.getElementById('daily-greeting-modal');
+            if (modal) {
+                modal.style.opacity = '0';
+                modal.style.transition = 'opacity 0.3s ease';
+                setTimeout(function() {
+                    modal.classList.add('hidden');
+                    modal.style.opacity = '';
+                    modal.style.transition = '';
+                }, 320);
+                localStorage.setItem('dailyGreetingShown', new Date().toDateString());
+            }
+        } catch(e) { console.warn('closeDailyGreeting error:', e); }
+    };
+}
