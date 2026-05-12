@@ -1,5 +1,5 @@
-// fix-conflict.js —— 最终完整接管版
-console.log('[fix-conflict] 完整接管版已加载！时间戳: 202605132200');
+// fix-conflict.js —— 最终完整版 v3（包含 switchToAnnouncementPanel）
+console.log('[fix-conflict] 最终完整版 v3 已加载！时间戳: 202605132300');
 
 (function() {
     'use strict';
@@ -7,6 +7,16 @@ console.log('[fix-conflict] 完整接管版已加载！时间戳: 202605132200')
     // 0. 备份函数
     if (typeof window._backupCriticalData === 'undefined') {
         window._backupCriticalData = function() {};
+    }
+
+    // ★★★ 定义缺失的 switchToAnnouncementPanel ★★★
+    if (typeof window.switchToAnnouncementPanel === 'undefined') {
+        window.switchToAnnouncementPanel = function() {
+            var listArea = document.getElementById('custom-replies-list');
+            var annPanel = document.getElementById('announcement-panel');
+            if (listArea) listArea.style.display = 'none';
+            if (annPanel) annPanel.style.display = 'block';
+        };
     }
 
     // 1. 顶部按钮
@@ -53,32 +63,26 @@ console.log('[fix-conflict] 完整接管版已加载！时间戳: 202605132200')
         if (!sidebar || sidebar._taken) return;
         sidebar._taken = true;
 
-        // 移除所有旧的事件（通过克隆节点）
         var newSidebar = sidebar.cloneNode(true);
         sidebar.parentNode.replaceChild(newSidebar, sidebar);
 
-        // 绑定新事件
         newSidebar.addEventListener('click', function(e) {
             var btn = e.target.closest('.sidebar-btn');
             if (!btn) return;
 
-            // 更新样式
             newSidebar.querySelectorAll('.sidebar-btn').forEach(function(b) { b.classList.remove('active'); });
             btn.classList.add('active');
 
             var major = btn.getAttribute('data-major');
 
-            // 公告特殊处理
             if (major === 'announcement' && typeof window.switchToAnnouncementPanel === 'function') {
                 window.switchToAnnouncementPanel();
                 return;
             }
 
-            // 强制设置全局状态
             window.currentMajorTab = major;
             window.currentSubTab = 'custom';
 
-            // 触发原生渲染
             if (typeof window.renderReplyLibrary === 'function') {
                 window.renderReplyLibrary();
             }
@@ -91,7 +95,6 @@ console.log('[fix-conflict] 完整接管版已加载！时间戳: 202605132200')
         if (!player || player._taken) return;
         player._taken = true;
 
-        // 填充歌单（如果为空）
         var playlist = document.getElementById('playlist');
         if (playlist && playlist.children.length === 0) {
             var songs = [
@@ -104,7 +107,6 @@ console.log('[fix-conflict] 完整接管版已加载！时间戳: 202605132200')
             }).join('');
         }
 
-        // 修复歌单按钮
         var listBtn = document.getElementById('list-btn');
         if (listBtn) {
             listBtn.onclick = function(e) {
@@ -117,7 +119,6 @@ console.log('[fix-conflict] 完整接管版已加载！时间戳: 202605132200')
             };
         }
 
-        // 修复收起按钮（让播放器收成小圆圈）
         var minimizeBtn = document.getElementById('minimize-btn');
         if (minimizeBtn) {
             minimizeBtn.onclick = function(e) {
@@ -127,7 +128,6 @@ console.log('[fix-conflict] 完整接管版已加载！时间戳: 202605132200')
             };
         }
 
-        // 修复迷你窗口展开
         var miniView = document.getElementById('mini-view');
         if (miniView) {
             miniView.onclick = function(e) {
@@ -138,7 +138,6 @@ console.log('[fix-conflict] 完整接管版已加载！时间戳: 202605132200')
             };
         }
 
-        // 点击外部关闭歌单
         document.addEventListener('click', function(e) {
             if (playlist && playlist.classList.contains('active') &&
                 !playlist.contains(e.target) &&
@@ -159,7 +158,6 @@ console.log('[fix-conflict] 完整接管版已加载！时间戳: 202605132200')
         }
     }
 
-    // 执行
     setTimeout(bindTopButtons, 600);
     setTimeout(takeOverSidebar, 1000);
     setTimeout(takeOverMusic, 1200);
