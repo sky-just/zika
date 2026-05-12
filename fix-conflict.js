@@ -1,15 +1,12 @@
-// fix-conflict.js —— 最终兜底版
-console.log('[fix-conflict] 最终兜底版已加载！');
+// fix-conflict.js —— 最终纯净版
+console.log('[fix-conflict] 最终纯净版已加载！');
 
 (function() {
     'use strict';
 
-    // 备份函数
     if (typeof window._backupCriticalData === 'undefined') {
         window._backupCriticalData = function() {};
     }
-
-    // 缺失函数定义
     if (typeof window.switchToAnnouncementPanel === 'undefined') {
         window.switchToAnnouncementPanel = function() {
             var listArea = document.getElementById('custom-replies-list');
@@ -19,7 +16,6 @@ console.log('[fix-conflict] 最终兜底版已加载！');
         };
     }
 
-    // 顶部按钮
     function bindTopButtons() {
         var dgBtn = document.getElementById('daily-greeting-btn');
         if (dgBtn && !dgBtn._fixed) {
@@ -57,22 +53,6 @@ console.log('[fix-conflict] 最终兜底版已加载！');
         }
     }
 
-    // 音乐迷你窗口
-    function fixMiniView() {
-        var miniView = document.getElementById('mini-view');
-        var player = document.getElementById('player');
-        if (miniView && player && !miniView._fixed) {
-            miniView._fixed = true;
-            miniView.onclick = function(e) {
-                e.stopPropagation();
-                if (player.classList.contains('collapsed')) {
-                    player.classList.remove('collapsed');
-                }
-            };
-        }
-    }
-
-    // 手帐修复
     function fixMoodModule() {
         if (typeof initMoodListeners === 'function') {
             initMoodListeners();
@@ -82,7 +62,30 @@ console.log('[fix-conflict] 最终兜底版已加载！');
         }
     }
 
+    function fixMusicPlayer() {
+        var player = document.getElementById('player');
+        if (!player) return;
+        var miniView = document.getElementById('mini-view');
+        if (miniView && !miniView._fixMusic) {
+            miniView._fixMusic = true;
+            miniView.onclick = function(e) {
+                e.stopPropagation();
+                if (player.classList.contains('collapsed')) player.classList.remove('collapsed');
+            };
+        }
+        var minimizeBtn = document.getElementById('minimize-btn');
+        if (minimizeBtn && !minimizeBtn._fixMusic) {
+            minimizeBtn._fixMusic = true;
+            minimizeBtn.onclick = function(e) {
+                e.stopPropagation();
+                player.classList.add('collapsed');
+                var pl = document.getElementById('playlist');
+                if (pl) pl.classList.remove('active');
+            };
+        }
+    }
+
     setTimeout(bindTopButtons, 600);
-    setTimeout(fixMiniView, 800);
     setTimeout(fixMoodModule, 2000);
+    setTimeout(fixMusicPlayer, 800);
 })();
