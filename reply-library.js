@@ -45,9 +45,9 @@ function _tabHasGroups(tab) {
 }
 
 // 全局变量（这些是原库使用的）
-let currentMajorTab = 'reply';
-let currentSubTab = 'custom';
-let currentReplyTab = 'custom';
+window.currentMajorTab = window.currentMajorTab || 'reply';
+window.currentSubTab = window.currentSubTab || 'custom';
+window.currentReplyTab = window.currentReplyTab || 'custom';
 let _batchSelectedIndices = new Set();
 let _batchModeActive = false;
 let _batchModeTarget = 'custom';
