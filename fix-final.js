@@ -1,5 +1,5 @@
-// fix-final.js —— 最终纯净兜底版
-console.log('[fix-final] 最终纯净兜底版已加载！版本: 202605130400');
+// fix-final.js —— 最终修复版（填充歌单 + 修复侧边栏混乱）
+console.log('[fix-final] 最终修复版已加载！版本: 202605130500');
 
 (function() {
     'use strict';
@@ -45,17 +45,32 @@ console.log('[fix-final] 最终纯净兜底版已加载！版本: 202605130400')
         }
     }
 
-    // 4. 音乐播放器按钮强制绑定（只绑这一次）
-    function bindMusicButtons() {
+    // 4. 音乐播放器：填充歌单 + 按钮绑定
+    function fixMusicPlayer() {
         var player = document.getElementById('player');
-        if (!player || player._musicFixed) return;
-        player._musicFixed = true;
+        if (!player || player._fixFinal) return;
+        player._fixFinal = true;
 
+        // 填充一些默认歌曲
+        var playlist = document.getElementById('playlist');
+        if (playlist && playlist.children.length === 0) {
+            var songs = [
+                { name: '告白の夜', artist: 'Ayasa', url: 'https://music.163.com/song/media/outer/url?id=1382596689.mp3' },
+                { name: '風の住む街', artist: '磯村由紀子', url: 'https://music.163.com/song/media/outer/url?id=22688479.mp3' },
+                { name: 'River Flows In You', artist: 'Yiruma', url: 'https://music.163.com/song/media/outer/url?id=26237342.mp3' }
+            ];
+            playlist.innerHTML = songs.map(function(song, i) {
+                return '<div class="playlist-item" data-url="' + song.url + '">' +
+                    '<div class="song-info"><div class="song-title-row">' + song.name + '</div>' +
+                    '<div class="song-sub-row">' + song.artist + '</div></div></div>';
+            }).join('');
+        }
+
+        // 歌单按钮
         var listBtn = document.getElementById('list-btn');
         if (listBtn) {
             listBtn.onclick = function(e) {
                 e.stopPropagation();
-                var playlist = document.getElementById('playlist');
                 if (playlist) {
                     var rect = player.getBoundingClientRect();
                     playlist.style.position = 'fixed';
@@ -66,16 +81,17 @@ console.log('[fix-final] 最终纯净兜底版已加载！版本: 202605130400')
             };
         }
 
+        // 收起按钮
         var minimizeBtn = document.getElementById('minimize-btn');
         if (minimizeBtn) {
             minimizeBtn.onclick = function(e) {
                 e.stopPropagation();
                 player.classList.add('collapsed');
-                var pl = document.getElementById('playlist');
-                if (pl) pl.classList.remove('active');
+                if (playlist) playlist.classList.remove('active');
             };
         }
 
+        // 迷你窗口展开
         var miniView = document.getElementById('mini-view');
         if (miniView) {
             miniView.onclick = function(e) {
@@ -97,9 +113,7 @@ console.log('[fix-final] 最终纯净兜底版已加载！版本: 202605130400')
         }
     }
 
-    // 6. 永不干预侧边栏、回复库、自定义回复 —— 它们由 reply-library.js 全权负责
-
     setTimeout(bindTopButtons, 600);
-    setTimeout(bindMusicButtons, 1000);
+    setTimeout(fixMusicPlayer, 1000);
     setTimeout(fixMoodModule, 2000);
 })();
