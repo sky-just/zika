@@ -245,3 +245,40 @@ function openComboManager() {
 
     refreshList();
     }
+// ===== 缺失函数补全 =====
+window.switchToAnnouncementPanel = function() {
+    var list = document.getElementById('custom-replies-list');
+    var ann = document.getElementById('announcement-panel');
+    if (list) list.style.display = 'none';
+    if (ann) ann.style.display = 'block';
+};
+
+// ===== 侧边栏状态自动修正 =====
+setTimeout(function() {
+    var sidebar = document.querySelector('.modal-sidebar');
+    if (!sidebar || sidebar._patched) return;
+    sidebar._patched = true;
+
+    sidebar.addEventListener('click', function(e) {
+        var btn = e.target.closest('.sidebar-btn');
+        if (!btn) return;
+
+        var major = btn.getAttribute('data-major');
+        if (major === 'announcement') return; // 公告由上面函数处理
+
+        // 修正子选项卡
+        window.currentMajorTab = major;
+        window.currentSubTab = (major === 'reply') ? 'custom' : 'pokes';
+
+        if (typeof renderReplyLibrary === 'function') {
+            renderReplyLibrary();
+        }
+    });
+}, 800);
+
+// ===== 音乐播放器初始化 =====
+setTimeout(function() {
+    if (typeof initMusicPlayer === 'function') {
+        initMusicPlayer();
+    }
+}, 1200);
