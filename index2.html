@@ -2255,6 +2255,14 @@
 <script src="jsfeaturesmoments.js"></script>
 <script src="jsvoice.js"></script>
 <script src="jsstorage-enhance.js"></script>
+        <script>
+// 终极清除：移除 fix-core.js 的引用
+(function() {
+    var scripts = document.querySelectorAll('script[src*="fix-core"]');
+    scripts.forEach(function(s) { s.remove(); });
+    console.log('[终极清除] 已强制移除所有 fix-core 引用');
+})();
+</script>
 </body>
 <script>
 // 最终精简修复：音乐 + 侧边栏状态 + 公告空白
