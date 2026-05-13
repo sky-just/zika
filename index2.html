@@ -2255,6 +2255,30 @@
 <script src="jsfeaturesmoments.js"></script>
 <script src="jsvoice.js"></script>
 <script src="jsstorage-enhance.js"></script>
-<script src="fix-core.js?v=202605131000"></script>
 </body>
+<script>
+// 最终精简修复：音乐 + 侧边栏状态 + 公告空白
+(function() {
+    // 1. 音乐播放器：延迟初始化，确保所有脚本加载完毕
+    setTimeout(function() {
+        if (typeof initMusicPlayer === 'function') {
+            initMusicPlayer();
+        }
+    }, 1500);
+
+    // 2. 强制修正侧边栏的 currentSubTab 初始值（修复选项卡错乱）
+    if (typeof currentMajorTab === 'undefined') window.currentMajorTab = 'reply';
+    if (typeof currentSubTab === 'undefined') window.currentSubTab = 'custom';
+
+    // 3. 修复公告面板空白问题：强制重设公告面板样式
+    setTimeout(function() {
+        var ann = document.getElementById('announcement-panel');
+        if (ann) {
+            ann.style.display = 'none';
+            ann.style.flex = '';
+            ann.style.minHeight = '';
+        }
+    }, 500);
+})();
+</script>
 </html>
