@@ -2270,5 +2270,68 @@
 <script src="jsfeaturesmoments.js"></script>
 <script src="jsvoice.js"></script>
 <script src="jsstorage-enhance.js"></script>
+<script>
+// 终极内嵌修复：侧边栏 + 音乐 + 公告
+(function() {
+    console.log('[终极内嵌修复] 已加载');
+
+    // 1. 补全缺失的函数
+    window.switchToAnnouncementPanel = function() {
+        var list = document.getElementById('custom-replies-list');
+        var ann = document.getElementById('announcement-panel');
+        if (list) list.style.display = 'none';
+        if (ann) ann.style.display = 'block';
+    };
+
+    // 2. 强制绑定侧边栏按钮（直接用 onclick 属性）
+    setTimeout(function() {
+        var buttons = document.querySelectorAll('.modal-sidebar .sidebar-btn');
+        buttons.forEach(function(btn) {
+            var major = btn.getAttribute('data-major');
+            if (major === 'announcement') {
+                btn.onclick = function() {
+                    window.switchToAnnouncementPanel();
+                };
+            } else {
+                btn.onclick = function() {
+                    // 设置正确的子选项卡
+                    window.currentMajorTab = major;
+                    window.currentSubTab = (major === 'reply') ? 'custom' : 'pokes';
+                    // 触发渲染
+                    if (typeof renderReplyLibrary === 'function') {
+                        renderReplyLibrary();
+                    }
+                };
+            }
+        });
+    }, 1000);
+
+    // 3. 强制绑定音乐播放器的歌单按钮
+    setTimeout(function() {
+        var listBtn = document.getElementById('list-btn');
+        if (listBtn) {
+            listBtn.onclick = function(e) {
+                e.stopPropagation();
+                var playlist = document.getElementById('playlist');
+                var player = document.getElementById('player');
+                if (playlist && player) {
+                    var rect = player.getBoundingClientRect();
+                    playlist.style.position = 'fixed';
+                    playlist.style.left = rect.left + 'px';
+                    playlist.style.top = (rect.top + 155) + 'px';
+                    playlist.classList.toggle('active');
+                }
+            };
+        }
+    }, 1000);
+
+    // 4. 强制初始化音乐播放器
+    setTimeout(function() {
+        if (typeof initMusicPlayer === 'function') {
+            initMusicPlayer();
+        }
+    }, 1500);
+})();
+</script>
 </body>
 </html>
