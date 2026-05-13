@@ -1,41 +1,27 @@
-// fix-final.js —— 最终修复版（填充歌单 + 修复侧边栏混乱）
-console.log('[fix-final] 最终修复版已加载！版本: 202605130500');
+// fix-final.js —— 最终精简版
+console.log('[fix-final] 最终精简版已加载！');
 
 (function() {
     'use strict';
 
-    // 0. 备份函数空壳
+    // 备份函数
     if (typeof window._backupCriticalData === 'undefined') {
         window._backupCriticalData = function() {};
     }
 
-    // 1. 确保全局变量存在
-    if (typeof window.currentMajorTab === 'undefined') window.currentMajorTab = 'reply';
-    if (typeof window.currentSubTab === 'undefined') window.currentSubTab = 'custom';
-
-    // 2. 缺失函数补全
-    if (typeof window.switchToAnnouncementPanel === 'undefined') {
-        window.switchToAnnouncementPanel = function() {
-            var listArea = document.getElementById('custom-replies-list');
-            var annPanel = document.getElementById('announcement-panel');
-            if (listArea) listArea.style.display = 'none';
-            if (annPanel) annPanel.style.display = 'block';
-        };
-    }
-
-    // 3. 顶部按钮兜底
+    // 顶部按钮
     function bindTopButtons() {
         var dgBtn = document.getElementById('daily-greeting-btn');
-        if (dgBtn && !dgBtn._fixTop) {
-            dgBtn._fixTop = true;
+        if (dgBtn && !dgBtn._fixed) {
+            dgBtn._fixed = true;
             dgBtn.onclick = function() {
                 var modal = document.getElementById('daily-greeting-modal');
                 if (modal) modal.classList.remove('hidden');
             };
         }
         var themeBtn = document.getElementById('theme-toggle');
-        if (themeBtn && !themeBtn._fixTop) {
-            themeBtn._fixTop = true;
+        if (themeBtn && !themeBtn._fixed) {
+            themeBtn._fixed = true;
             themeBtn.onclick = function() {
                 if (typeof settings !== 'undefined') {
                     settings.isDarkMode = !settings.isDarkMode;
@@ -45,13 +31,12 @@ console.log('[fix-final] 最终修复版已加载！版本: 202605130500');
         }
     }
 
-    // 4. 音乐播放器：填充歌单 + 按钮绑定
+    // 音乐播放器（填充歌单 + 按钮）
     function fixMusicPlayer() {
         var player = document.getElementById('player');
         if (!player || player._fixFinal) return;
         player._fixFinal = true;
 
-        // 填充一些默认歌曲
         var playlist = document.getElementById('playlist');
         if (playlist && playlist.children.length === 0) {
             var songs = [
@@ -66,7 +51,6 @@ console.log('[fix-final] 最终修复版已加载！版本: 202605130500');
             }).join('');
         }
 
-        // 歌单按钮
         var listBtn = document.getElementById('list-btn');
         if (listBtn) {
             listBtn.onclick = function(e) {
@@ -81,7 +65,6 @@ console.log('[fix-final] 最终修复版已加载！版本: 202605130500');
             };
         }
 
-        // 收起按钮
         var minimizeBtn = document.getElementById('minimize-btn');
         if (minimizeBtn) {
             minimizeBtn.onclick = function(e) {
@@ -91,7 +74,6 @@ console.log('[fix-final] 最终修复版已加载！版本: 202605130500');
             };
         }
 
-        // 迷你窗口展开
         var miniView = document.getElementById('mini-view');
         if (miniView) {
             miniView.onclick = function(e) {
@@ -103,7 +85,7 @@ console.log('[fix-final] 最终修复版已加载！版本: 202605130500');
         }
     }
 
-    // 5. 手帐修复
+    // 手帐修复
     function fixMoodModule() {
         if (typeof initMoodListeners === 'function') {
             initMoodListeners();
