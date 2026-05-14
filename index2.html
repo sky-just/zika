@@ -2271,46 +2271,22 @@
 <script src="jsvoice.js"></script>
 <script src="jsstorage-enhance.js"></script>
 <script>
-// 最终最简修复：侧边栏状态 + 音乐初始化
+// 最小化修复：只做最必要的兜底
 (function() {
-    // 1. 补全缺失的函数
-    if (typeof window.switchToAnnouncementPanel === 'undefined') {
-        window.switchToAnnouncementPanel = function() {
-            var list = document.getElementById('custom-replies-list');
-            var ann = document.getElementById('announcement-panel');
-            if (list) list.style.display = 'none';
-            if (ann) ann.style.display = 'block';
-        };
-    }
+    // 1. 补全缺失函数
+    window.switchToAnnouncementPanel = window.switchToAnnouncementPanel || function() {
+        var list = document.getElementById('custom-replies-list');
+        var ann = document.getElementById('announcement-panel');
+        if (list) list.style.display = 'none';
+        if (ann) ann.style.display = 'block';
+    };
 
-    // 2. 强制修正侧边栏点击后的子选项卡
-    setTimeout(function() {
-        var sidebar = document.querySelector('.modal-sidebar');
-        if (!sidebar || sidebar._finalFixed) return;
-        sidebar._finalFixed = true;
-
-        sidebar.addEventListener('click', function(e) {
-            var btn = e.target.closest('.sidebar-btn');
-            if (!btn) return;
-
-            var major = btn.getAttribute('data-major');
-            // 设置正确的子选项卡
-            window.currentMajorTab = major;
-            window.currentSubTab = (major === 'reply') ? 'custom' : 'pokes';
-
-            // 强制刷新
-            if (typeof renderReplyLibrary === 'function') {
-                renderReplyLibrary();
-            }
-        });
-    }, 800);
-
-    // 3. 音乐播放器延迟初始化
+    // 2. 音乐播放器延迟初始化
     setTimeout(function() {
         if (typeof initMusicPlayer === 'function') {
             initMusicPlayer();
         }
-    }, 1200);
+    }, 1500);
 })();
 </script>
 </body>
