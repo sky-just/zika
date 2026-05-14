@@ -194,3 +194,12 @@ if (document.readyState === 'loading') {
 } else {
     setupEventListeners();
 }
+// ===== 强制初始化音乐播放器 =====
+(function() {
+    if (typeof initMusicPlayer === 'function') {
+        // 延迟执行，确保 DOM 已就绪
+        setTimeout(function() {
+            initMusicPlayer();
+        }, 1000);
+    }
+})();
