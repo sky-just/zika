@@ -2270,24 +2270,5 @@
 <script src="jsfeaturesmoments.js"></script>
 <script src="jsvoice.js"></script>
 <script src="jsstorage-enhance.js"></script>
-<script>
-// 最小化修复：只做最必要的兜底
-(function() {
-    // 1. 补全缺失函数
-    window.switchToAnnouncementPanel = window.switchToAnnouncementPanel || function() {
-        var list = document.getElementById('custom-replies-list');
-        var ann = document.getElementById('announcement-panel');
-        if (list) list.style.display = 'none';
-        if (ann) ann.style.display = 'block';
-    };
-
-    // 2. 音乐播放器延迟初始化
-    setTimeout(function() {
-        if (typeof initMusicPlayer === 'function') {
-            initMusicPlayer();
-        }
-    }, 1500);
-})();
-</script>
 </body>
 </html>
