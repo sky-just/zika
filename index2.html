@@ -2271,11 +2271,9 @@
 <script src="jsvoice.js"></script>
 <script src="jsstorage-enhance.js"></script>
 <script>
-// 终极强制修复：侧边栏状态 + 公告叠加 + 音乐兜底
+// 最终最简修复：侧边栏状态 + 音乐初始化
 (function() {
-    console.log('[终极强制修复] 已加载');
-
-    // 1. 补全缺失函数
+    // 1. 补全缺失的函数
     if (typeof window.switchToAnnouncementPanel === 'undefined') {
         window.switchToAnnouncementPanel = function() {
             var list = document.getElementById('custom-replies-list');
@@ -2285,98 +2283,34 @@
         };
     }
 
-    // 2. 强制接管侧边栏点击（用最原始的 onclick 属性）
+    // 2. 强制修正侧边栏点击后的子选项卡
     setTimeout(function() {
         var sidebar = document.querySelector('.modal-sidebar');
-        if (!sidebar || sidebar._done) return;
-        sidebar._done = true;
+        if (!sidebar || sidebar._finalFixed) return;
+        sidebar._finalFixed = true;
 
-        var buttons = sidebar.querySelectorAll('.sidebar-btn');
-        buttons.forEach(function(btn) {
+        sidebar.addEventListener('click', function(e) {
+            var btn = e.target.closest('.sidebar-btn');
+            if (!btn) return;
+
             var major = btn.getAttribute('data-major');
+            // 设置正确的子选项卡
+            window.currentMajorTab = major;
+            window.currentSubTab = (major === 'reply') ? 'custom' : 'pokes';
 
-            btn.onclick = function() {
-                // 更新样式
-                buttons.forEach(function(b) { b.classList.remove('active'); });
-                btn.classList.add('active');
-
-                // 无论点什么，先把公告面板和子选项卡隐藏，再显示列表
-                var annPanel = document.getElementById('announcement-panel');
-                var listArea = document.getElementById('custom-replies-list');
-                if (annPanel) annPanel.style.display = 'none';
-                if (listArea) listArea.style.display = '';
-
-                // 公告特殊处理
-                if (major === 'announcement') {
-                    if (typeof window.switchToAnnouncementPanel === 'function') {
-                        window.switchToAnnouncementPanel();
-                    }
-                    return;
-                }
-
-                // 核心：强制设置子选项卡
-                window.currentMajorTab = major;
-                window.currentSubTab = (major === 'reply') ? 'custom' : 'pokes';
-
-                // 强制调用原生渲染
-                if (typeof window.renderReplyLibrary === 'function') {
-                    window.renderReplyLibrary();
-                }
-            };
+            // 强制刷新
+            if (typeof renderReplyLibrary === 'function') {
+                renderReplyLibrary();
+            }
         });
     }, 800);
 
-    // 3. 音乐播放器强制修复
+    // 3. 音乐播放器延迟初始化
     setTimeout(function() {
-        var listBtn = document.getElementById('list-btn');
-        if (listBtn && !listBtn._musicDone) {
-            listBtn._musicDone = true;
-            listBtn.onclick = function(e) {
-                e.stopPropagation();
-                var playlist = document.getElementById('playlist');
-                var player = document.getElementById('player');
-                if (!playlist || !player) return;
-
-                // 如果歌单为空，填充歌曲
-                if (playlist.children.length === 0) {
-                    var songs = [
-                        { name: '告白の夜', artist: 'Ayasa' },
-                        { name: '風の住む街', artist: '磯村由紀子' },
-                        { name: 'River Flows In You', artist: 'Yiruma' }
-                    ];
-                    playlist.innerHTML = songs.map(function(s) {
-                        return '<div class="playlist-item"><div class="song-info"><div class="song-title-row">' + s.name + '</div><div class="song-sub-row">' + s.artist + '</div></div></div>';
-                    }).join('');
-                }
-
-                // 显示歌单
-                var rect = player.getBoundingClientRect();
-                playlist.style.position = 'fixed';
-                playlist.style.left = rect.left + 'px';
-                playlist.style.top = (rect.top + 155) + 'px';
-                playlist.classList.toggle('active');
-            };
-        }
-
-        // 修复收起按钮
-        var minimizeBtn = document.getElementById('minimize-btn');
-        if (minimizeBtn && !minimizeBtn._musicDone) {
-            minimizeBtn._musicDone = true;
-            minimizeBtn.onclick = function(e) {
-                e.stopPropagation();
-                var player = document.getElementById('player');
-                var playlist = document.getElementById('playlist');
-                if (player) player.classList.add('collapsed');
-                if (playlist) playlist.classList.remove('active');
-            };
-        }
-
-        // 尝试初始化原生播放器
         if (typeof initMusicPlayer === 'function') {
             initMusicPlayer();
         }
     }, 1200);
-
 })();
 </script>
 </body>
