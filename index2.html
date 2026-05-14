@@ -2271,9 +2271,9 @@
 <script src="jsvoice.js"></script>
 <script src="jsstorage-enhance.js"></script>
 <script>
-// 终极内嵌修复：侧边栏 + 音乐 + 公告
+// 最终独立版：自定义回复 + 音乐初始化
 (function() {
-    console.log('[终极内嵌修复] 已加载');
+    console.log('[最终独立版] 已加载');
 
     // 1. 补全缺失的函数
     window.switchToAnnouncementPanel = function() {
@@ -2283,30 +2283,119 @@
         if (ann) ann.style.display = 'block';
     };
 
-    // 2. 强制绑定侧边栏按钮（直接用 onclick 属性）
+    // 2. 强制接管自定义回复侧边栏，用全新的独立逻辑
     setTimeout(function() {
-        var buttons = document.querySelectorAll('.modal-sidebar .sidebar-btn');
+        var sidebar = document.querySelector('.modal-sidebar');
+        if (!sidebar || sidebar._taken) return;
+        sidebar._taken = true;
+
+        // 隐藏旧的子选项卡（我们不用它了）
+        var oldSubTabs = document.getElementById('cr-sub-tabs');
+        if (oldSubTabs) oldSubTabs.style.display = 'none';
+
+        // 给每个侧边栏按钮绑定新事件
+        var buttons = sidebar.querySelectorAll('.sidebar-btn');
         buttons.forEach(function(btn) {
-            var major = btn.getAttribute('data-major');
-            if (major === 'announcement') {
-                btn.onclick = function() {
+            btn.onclick = function() {
+                // 更新侧边栏样式
+                buttons.forEach(function(b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+
+                var major = btn.getAttribute('data-major');
+
+                // 公告
+                if (major === 'announcement') {
                     window.switchToAnnouncementPanel();
-                };
-            } else {
-                btn.onclick = function() {
-                    // 设置正确的子选项卡
-                    window.currentMajorTab = major;
-                    window.currentSubTab = (major === 'reply') ? 'custom' : 'pokes';
-                    // 触发渲染
-                    if (typeof renderReplyLibrary === 'function') {
-                        renderReplyLibrary();
-                    }
-                };
-            }
+                    return;
+                }
+
+                // 获取内容区域
+                var listArea = document.getElementById('custom-replies-list');
+                if (!listArea) return;
+
+                // 根据选项卡显示不同内容
+                if (major === 'reply') {
+                    showRepliesTab(listArea);
+                } else if (major === 'atmosphere') {
+                    showAtmosphereTab(listArea);
+                }
+            };
         });
+
+        // 默认打开回复库
+        var replyBtn = sidebar.querySelector('.sidebar-btn[data-major="reply"]');
+        if (replyBtn) replyBtn.click();
     }, 1000);
 
-    // 3. 强制绑定音乐播放器的歌单按钮
+    // 3. 接管底部新增按钮
+    setTimeout(function() {
+        var addBtn = document.getElementById('add-custom-reply');
+        if (addBtn) {
+            addBtn.onclick = function() {
+                // 判断当前是哪个选项卡
+                var sidebar = document.querySelector('.modal-sidebar');
+                var activeBtn = sidebar ? sidebar.querySelector('.sidebar-btn.active') : null;
+                var major = activeBtn ? activeBtn.getAttribute('data-major') : 'reply';
+
+                var input = prompt(major === 'reply' ? '请输入新字卡内容:' : '请输入新拍一拍内容:');
+                if (input && input.trim()) {
+                    if (major === 'reply') {
+                        if (typeof customReplies !== 'undefined') customReplies.push(input.trim());
+                    } else {
+                        if (typeof customPokes !== 'undefined') customPokes.push(input.trim());
+                    }
+                    if (typeof throttledSaveData === 'function') throttledSaveData();
+                    // 刷新当前显示
+                    var activeBtn2 = sidebar ? sidebar.querySelector('.sidebar-btn.active') : null;
+                    if (activeBtn2) activeBtn2.click();
+                    if (typeof showNotification === 'function') showNotification('已添加', 'success');
+                }
+            };
+        }
+    }, 1200);
+
+    // 4. 显示回复库内容（字卡列表）
+    function showRepliesTab(container) {
+        var replies = (typeof customReplies !== 'undefined') ? customReplies : [];
+        if (replies.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:40px;">列表空空如也</div>';
+            return;
+        }
+        container.innerHTML = replies.map(function(r, i) {
+            return '<div class="custom-reply-item">' +
+                '<span class="custom-reply-text">' + r + '</span>' +
+                '<div class="custom-reply-actions">' +
+                    '<button onclick="customReplies.splice(' + i + ',1);throttledSaveData();document.querySelector(\'.sidebar-btn.active\').click();" style="color:red;background:none;border:none;cursor:pointer;">删除</button>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+    }
+
+    // 5. 显示氛围感内容（拍一拍列表）
+    function showAtmosphereTab(container) {
+        var pokes = (typeof customPokes !== 'undefined') ? customPokes : [];
+        if (pokes.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:40px;">列表空空如也</div>';
+            return;
+        }
+        container.innerHTML = pokes.map(function(p, i) {
+            return '<div class="custom-reply-item">' +
+                '<span class="custom-reply-text">' + p + '</span>' +
+                '<div class="custom-reply-actions">' +
+                    '<button onclick="customPokes.splice(' + i + ',1);throttledSaveData();document.querySelector(\'.sidebar-btn.active\').click();" style="color:red;background:none;border:none;cursor:pointer;">删除</button>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+    }
+
+    // 6. 强制初始化音乐播放器
+    setTimeout(function() {
+        if (typeof initMusicPlayer === 'function') {
+            initMusicPlayer();
+        }
+    }, 1500);
+
+    // 7. 强制绑定音乐歌单按钮
     setTimeout(function() {
         var listBtn = document.getElementById('list-btn');
         if (listBtn) {
@@ -2325,12 +2414,6 @@
         }
     }, 1000);
 
-    // 4. 强制初始化音乐播放器
-    setTimeout(function() {
-        if (typeof initMusicPlayer === 'function') {
-            initMusicPlayer();
-        }
-    }, 1500);
 })();
 </script>
 </body>
