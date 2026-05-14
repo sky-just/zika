@@ -804,3 +804,35 @@ let _selectedGroupIdx = -1;
         showNotification(`✓ 添加 ${added} 条${skipped ? `，跳过 ${skipped} 条重复` : ''}${groupHint}`, 'success');
     };
 }
+// ===== 强制修正侧边栏点击后的子选项卡 =====
+(function() {
+    setTimeout(function() {
+        var sidebar = document.querySelector('.modal-sidebar');
+        if (!sidebar || sidebar._forceFixed) return;
+        sidebar._forceFixed = true;
+
+        sidebar.addEventListener('click', function(e) {
+            var btn = e.target.closest('.sidebar-btn');
+            if (!btn) return;
+
+            var major = btn.getAttribute('data-major');
+
+            // 公告特殊处理
+            if (major === 'announcement') {
+                if (typeof window.switchToAnnouncementPanel === 'function') {
+                    window.switchToAnnouncementPanel();
+                }
+                return;
+            }
+
+            // 设置正确的子选项卡
+            window.currentMajorTab = major;
+            window.currentSubTab = (major === 'reply') ? 'custom' : 'pokes';
+
+            // 强制渲染
+            if (typeof window.renderReplyLibrary === 'function') {
+                window.renderReplyLibrary();
+            }
+        });
+    }, 800);
+})();
