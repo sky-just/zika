@@ -125,6 +125,18 @@ const ICONS = {
 
 // ===== 核心渲染函数 =====
 function renderReplyLibrary() {
+    function renderReplyLibrary() {
+    // ===== 添加以下 7 行，其他全部保持不变 =====
+    const replyList = document.getElementById('custom-replies-list');
+    const subTabs = document.getElementById('cr-sub-tabs');
+    const announcePanel = document.getElementById('announcement-panel');
+    if (replyList) replyList.style.display = 'block';
+    if (subTabs) subTabs.style.display = 'flex';
+    if (announcePanel) announcePanel.style.display = 'none';
+    // ===== 添加结束，下面是原有代码 =====
+    
+    if (currentMajorTab === 'announcement') return;
+    // …… 后续原有代码不要动 ……
     if (currentMajorTab === 'announcement') return;
     const list = document.getElementById('custom-replies-list');
     const titleEl = document.getElementById('cr-modal-title');
