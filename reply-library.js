@@ -807,32 +807,37 @@ let _selectedGroupIdx = -1;
 // ===== 强制修正侧边栏点击后的子选项卡 =====
 (function() {
     setTimeout(function() {
-        var sidebar = document.querySelector('.modal-sidebar');
-        if (!sidebar || sidebar._forceFixed) return;
-        sidebar._forceFixed = true;
+    var sidebar = document.querySelector('.modal-sidebar');
+    if (!sidebar) return;
 
-        sidebar.addEventListener('click', function(e) {
-            var btn = e.target.closest('.sidebar-btn');
-            if (!btn) return;
+    // 初始化默认状态，确保进入弹窗就能看见回复库内容
+    window.currentMajorTab = 'reply';
+    window.currentSubTab = 'custom';
 
-            var major = btn.getAttribute('data-major');
-
-            // 公告特殊处理
-            if (major === 'announcement') {
-                if (typeof window.switchToAnnouncementPanel === 'function') {
-                    window.switchToAnnouncementPanel();
-                }
-                return;
+    sidebar.addEventListener('click', function(e) {
+        var btn = e.target.closest('.sidebar-btn');
+        if (!btn) return;
+        var major = btn.getAttribute('data-major');
+        if (major === 'announcement') {
+            if (typeof window.switchToAnnouncementPanel === 'function') {
+                window.switchToAnnouncementPanel();
             }
+            return;
+        }
+        window.currentMajorTab = major;
+        // 根据主选项卡重置子选项卡默认值
+        if (major === 'reply') {
+            window.currentSubTab = 'custom';
+        } else if (major === 'atmosphere') {
+            window.currentSubTab = 'pokes';
+        }
+        if (typeof window.renderReplyLibrary === 'function') {
+            window.renderReplyLibrary();
+        }
+    });
 
-            // 设置正确的子选项卡
-            window.currentMajorTab = major;
-            window.currentSubTab = (major === 'reply') ? 'custom' : 'pokes';
-
-            // 强制渲染
-            if (typeof window.renderReplyLibrary === 'function') {
-                window.renderReplyLibrary();
-            }
-        });
-    }, 800);
-})();
+    // 立刻渲染一次，保证打开弹窗时不是空白
+    if (typeof window.renderReplyLibrary === 'function') {
+        window.renderReplyLibrary();
+    }
+}, 800);
