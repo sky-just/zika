@@ -2270,5 +2270,24 @@
 <script src="jsfeaturesmoments.js"></script>
 <script src="jsvoice.js"></script>
 <script src="jsstorage-enhance.js"></script>
+ <script>
+(function() {
+    var skipBtn = document.getElementById('tour-skip-btn');
+    var overlay = document.getElementById('tour-overlay');
+    if (skipBtn && overlay) {
+        skipBtn.addEventListener('click', function() {
+            overlay.style.display = 'none';
+        });
+    }
+})();
+ </script>
+        <script>
+window.addEventListener('load', function() {
+    var welcome = document.getElementById('welcome-animation');
+    if (welcome) welcome.style.display = 'none';
+    var title = document.getElementById('welcome-title-glitch');
+    if (title) title.textContent = '传讯';
+});
+        </script>
 </body>
 </html>
