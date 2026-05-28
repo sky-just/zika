@@ -1,22 +1,23 @@
-// features.js - 精简修复版
-// 只包含必要函数，移除与 reply-library.js 冲突的部分
-
+// features.js - 最终完整修复版
 (function() {
 
-    // ========== 公告栏面板切换（已修复 ID） ==========
+    // ========== 公告栏面板切换 ==========
     function switchToAnnouncementPanel() {
         const announcePanel = document.getElementById('announcement-panel');
         if (announcePanel) {
-            // 隐藏回复列表和子选项卡，避免重叠
+            // 隐藏回复列表和子选项卡
             const replyList = document.getElementById('custom-replies-list');
             const subTabs = document.getElementById('cr-sub-tabs');
             if (replyList) replyList.style.display = 'none';
             if (subTabs) subTabs.style.display = 'none';
+            // 显示公告面板
             announcePanel.style.display = 'block';
+            // ⭐ 关键：设置全局状态变量
+            window.currentMajorTab = 'announcement';
         }
     }
 
-    // ========== 每日问候关闭/重开（已修复关闭按钮 ID） ==========
+    // ========== 每日问候关闭/重开 ==========
     function closeDailyGreeting() {
         const greeting = document.getElementById('daily-greeting-modal');
         if (greeting) greeting.style.display = 'none';
@@ -27,15 +28,18 @@
         if (greeting) greeting.style.display = 'block';
     }
 
-    // ========== 沉浸模式切换（保留，其他地方可能用到） ==========
+    // ========== 沉浸模式切换 ==========
     function toggleImmersiveMode() {
         document.body.classList.toggle('immersive-mode');
     }
 
-    // ========== 音乐悬浮器初始化（已修复选择器） ==========
+    // ========== 音乐悬浮器初始化 ==========
     function initMusicPlayer() {
         const playerContainer = document.getElementById('player');
         if (!playerContainer) return;
+
+        // 默认显示悬浮窗
+        playerContainer.style.display = 'block';
 
         // 迷你视图点击展开
         const miniView = document.getElementById('mini-view');
@@ -56,7 +60,7 @@
             });
         }
 
-        // 歌单按钮（三条杠）
+        // 歌单按钮
         const listBtn = document.getElementById('list-btn');
         const playlist = document.getElementById('playlist');
         if (listBtn && playlist) {
@@ -73,14 +77,27 @@
         // 初始化音乐悬浮器
         initMusicPlayer();
 
-        // 组字卡入口绑定（保留）
+        // ⭐ 新增：绑定高级功能里的“悬浮音乐播放器”开关
+        const musicToggle = document.getElementById('music-player-toggle');
+        const player = document.getElementById('player');
+        if (musicToggle && player) {
+            musicToggle.addEventListener('click', function() {
+                if (player.style.display === 'none' || player.style.display === '') {
+                    player.style.display = 'block';
+                } else {
+                    player.style.display = 'none';
+                }
+            });
+        }
+
+        // 组字卡入口绑定
         const comboBtn = document.getElementById('openComboBtn');
         if (comboBtn && typeof window.openComboManager === 'function') {
             comboBtn.addEventListener('click', window.openComboManager);
         }
     }
 
-    // 确保页面加载后执行一次 initMusicPlayer
+    // 确保音乐播放器在 load 后初始化
     window.addEventListener('load', function() {
         setTimeout(initMusicPlayer, 100);
     });
