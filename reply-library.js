@@ -123,6 +123,12 @@ const ICONS = {
 
 // ===== 核心渲染函数 =====
 function renderReplyLibrary() {
+    const replyListDiv = document.getElementById('custom-replies-list');
+const subTabsDiv = document.getElementById('cr-sub-tabs');
+const announceDiv = document.getElementById('announcement-panel');
+if (replyListDiv) replyListDiv.style.display = 'block';
+if (subTabsDiv) subTabsDiv.style.display = 'flex';
+if (announceDiv) announceDiv.style.display = 'none';
     // ===== 强制修复面板显示残留 =====
     const replyListDiv = document.getElementById('custom-replies-list');
     const subTabsDiv = document.getElementById('cr-sub-tabs');
@@ -766,6 +772,8 @@ function _showBatchAddDialog() {
 
 // ===== 强制修正侧边栏点击后的子选项卡 =====
 (function() {
+    window.currentMajorTab = window.currentMajorTab || 'reply';
+window.currentSubTab = window.currentSubTab || 'custom';
     setTimeout(function() {
         var sidebar = document.querySelector('.modal-sidebar');
         if (!sidebar) return;
