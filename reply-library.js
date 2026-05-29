@@ -122,17 +122,12 @@ const ICONS = {
 })();
 
 // ===== 核心渲染函数 =====
+
 function renderReplyLibrary() {
-    const replyListDiv = document.getElementById('custom-replies-list');
-const subTabsDiv = document.getElementById('cr-sub-tabs');
-const announceDiv = document.getElementById('announcement-panel');
-if (replyListDiv) replyListDiv.style.display = 'block';
-if (subTabsDiv) subTabsDiv.style.display = 'flex';
-if (announceDiv) announceDiv.style.display = 'none';
-    // ===== 强制修复面板显示残留 =====
-    const replyListDiv = document.getElementById('custom-replies-list');
-    const subTabsDiv = document.getElementById('cr-sub-tabs');
-    const announceDiv = document.getElementById('announcement-panel');
+    // === 面板强制重置（只执行一次，不重复声明） ===
+    var replyListDiv = document.getElementById('custom-replies-list');
+    var subTabsDiv = document.getElementById('cr-sub-tabs');
+    var announceDiv = document.getElementById('announcement-panel');
     
     if (currentMajorTab === 'announcement') {
         if (replyListDiv) replyListDiv.style.display = 'none';
@@ -144,23 +139,23 @@ if (announceDiv) announceDiv.style.display = 'none';
         if (subTabsDiv) subTabsDiv.style.display = 'flex';
         if (announceDiv) announceDiv.style.display = 'none';
     }
-    // ===== 原有渲染逻辑继续 =====
-    if (currentMajorTab === 'announcement') return; // 保留下方原有检查（实际不会执行）
+    
+    // === 原有渲染逻辑 ===
     const list = document.getElementById('custom-replies-list');
     const titleEl = document.getElementById('cr-modal-title');
     if (!list) return;
+    
     const currentConfig = LIBRARY_CONFIG[currentMajorTab];
     if (titleEl) titleEl.textContent = currentConfig.title;
+    
     const subTabsContainer = document.getElementById('cr-sub-tabs');
     if (subTabsContainer) {
-        subTabsContainer.innerHTML = currentConfig.tabs.map(tab => `
-            <button class="reply-tab-btn ${currentSubTab === tab.id ? 'active' : ''}" data-id="${tab.id}" data-mode="${tab.mode}">
-                ${tab.name}
-            </button>
-        `).join('');
+        subTabsContainer.innerHTML = currentConfig.tabs.map(tab => 
+            '<button class="reply-tab-btn ' + (currentSubTab === tab.id ? 'active' : '') + '" data-id="' + tab.id + '" data-mode="' + tab.mode + '">' + tab.name + '</button>'
+        ).join('');
         subTabsContainer.querySelectorAll('.reply-tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                currentSubTab = btn.dataset.id;
+            btn.addEventListener('click', function() {
+                currentSubTab = this.dataset.id;
                 _batchModeActive = false;
                 _batchSelectedIndices.clear();
                 _activeGroupFilter = null;
@@ -170,7 +165,46 @@ if (announceDiv) announceDiv.style.display = 'none';
             });
         });
     }
+    
     list.innerHTML = '';
+    list.className = 'content-list-area';
+    
+    const activeTabConfig = currentConfig.tabs.find(function(t) { return t.id === currentSubTab; });
+    if (activeTabConfig) list.classList.add(activeTabConfig.mode + '-mode');
+    
+    let itemsToRender = [];
+    let renderType = 'text';
+    
+    if (currentMajorTab === 'reply') {
+        if (currentSubTab === 'custom') {
+            itemsToRender = customReplies;
+        } else if (currentSubTab === 'emojis') {
+            itemsToRender = CONSTANTS.REPLY_EMOJIS;
+            renderType = 'emoji';
+        } else if (currentSubTab === 'stickers') {
+            itemsToRender = stickerLibrary;
+            renderType = 'image';
+        }
+    } else if (currentMajorTab === 'atmosphere') {
+        if (currentSubTab === 'pokes') itemsToRender = customPokes;
+        else if (currentSubTab === 'statuses') itemsToRender = customStatuses;
+        else if (currentSubTab === 'mottos') itemsToRender = customMottos;
+        else if (currentSubTab === 'intros') itemsToRender = customIntros;
+    }
+    
+    if (itemsToRender.length === 0) {
+        list.innerHTML = '<div class="empty-tip">暂无内容</div>';
+        return;
+    }
+    
+    // 渲染列表项（保留你原有的渲染逻辑）
+    itemsToRender.forEach(function(item, index) {
+        var div = document.createElement('div');
+        div.className = 'content-item';
+        div.textContent = typeof item === 'string' ? item : (item.text || item.name || '');
+        list.appendChild(div);
+    });
+}    list.innerHTML = '';
     list.className = 'content-list-area';
     const activeTabConfig = currentConfig.tabs.find(t => t.id === currentSubTab);
     if (activeTabConfig) list.classList.add(activeTabConfig.mode + '-mode');
