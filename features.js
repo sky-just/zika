@@ -131,5 +131,25 @@ window.closeDailyGreeting = closeDailyGreeting;
 window.reopenDailyGreeting = reopenDailyGreeting;
 window.toggleImmersiveMode = toggleImmersiveMode;
 window.initMusicPlayer = initMusicPlayer;
-
+window.openComboManager = function() {
+    const modal = document.getElementById('custom-replies-modal');
+    if (modal && typeof showModal === 'function') {
+        showModal(modal);
+        const tabs = document.querySelectorAll('#cr-sub-tabs .reply-tab-btn');
+        let found = false;
+        for (let i = 0; i < tabs.length; i++) {
+            const btn = tabs[i];
+            if (btn.textContent.includes('组字卡') || btn.dataset.id === 'combo') {
+                btn.click();
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            showNotification('请先在自定义回复中添加"组字卡"选项卡', 'info');
+        }
+    } else {
+        showNotification('请先打开自定义回复面板', 'info');
+    }
+};
 })();
