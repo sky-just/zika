@@ -182,4 +182,19 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupEventListeners);
 } else {
     setupEventListeners();
+    // 缺失的顶部按钮绑定
+var groupChatBtn = document.getElementById('group-chat-btn');
+if (groupChatBtn) {
+    groupChatBtn.addEventListener('click', function() {
+        var modal = document.getElementById('group-chat-modal');
+        if (modal && typeof showModal === 'function') showModal(modal);
+    });
+}
+
+var dailyGreetingBtn = document.getElementById('daily-greeting-btn');
+if (dailyGreetingBtn) {
+    dailyGreetingBtn.addEventListener('click', function() {
+        if (typeof reopenDailyGreeting === 'function') reopenDailyGreeting();
+    });
+}
 }
