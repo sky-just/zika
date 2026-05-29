@@ -18,14 +18,20 @@ function switchToAnnouncementPanel() {
 
 // ========== 每日问候关闭/重开 ==========
 function closeDailyGreeting() {
-    const greeting = document.getElementById('daily-greeting-modal');
-    if (greeting) greeting.style.display = 'none';
-}
-function reopenDailyGreeting() {
-    const greeting = document.getElementById('daily-greeting-modal');
-    if (greeting) greeting.style.display = 'block';
+    const modal = document.getElementById('daily-greeting-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+    }
 }
 
+function reopenDailyGreeting() {
+    const modal = document.getElementById('daily-greeting-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+    }
+}
 // ========== 沉浸模式切换 ==========
 function toggleImmersiveMode() {
     document.body.classList.toggle('immersive-mode');
