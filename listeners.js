@@ -182,7 +182,9 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupEventListeners);
 } else {
     setupEventListeners();
-    // 缺失的顶部按钮绑定
+}
+
+// 缺失的顶部按钮绑定（独立执行，不放在 else 里）
 var groupChatBtn = document.getElementById('group-chat-btn');
 if (groupChatBtn) {
     groupChatBtn.addEventListener('click', function() {
@@ -196,5 +198,4 @@ if (dailyGreetingBtn) {
     dailyGreetingBtn.addEventListener('click', function() {
         if (typeof reopenDailyGreeting === 'function') reopenDailyGreeting();
     });
-}
 }
