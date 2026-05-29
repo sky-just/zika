@@ -31,63 +31,63 @@ function toggleImmersiveMode() {
     document.body.classList.toggle('immersive-mode');
 }
 
+
 // ========== 音乐悬浮器初始化 ==========
 function initMusicPlayer() {
-    const playerContainer = document.getElementById('player');
-    if (!playerContainer) return;
+    const player = document.getElementById('player');
+    if (!player) return;
 
-    // 确保播放器默认可见（如果被CSS隐藏则显示）
-    playerContainer.style.display = 'block';
+    // 绑定音乐播放器开关
+    const musicToggle = document.getElementById('music-player-toggle');
+    if (musicToggle && !musicToggle._bound) {
+        musicToggle._bound = true;
+        musicToggle.addEventListener('click', () => {
+            if (player.style.display === 'none') {
+                player.style.display = 'block';
+                if (typeof settings !== 'undefined') settings.musicPlayerEnabled = true;
+            } else {
+                player.style.display = 'none';
+                if (typeof settings !== 'undefined') settings.musicPlayerEnabled = false;
+            }
+            if (typeof throttledSaveData === 'function') throttledSaveData();
+        });
+    }
 
-    // 获取视图元素
+    const isEnabled = (typeof settings !== 'undefined' && settings.musicPlayerEnabled);
+    player.style.display = isEnabled ? 'block' : 'none';
+
     const miniView = document.getElementById('mini-view');
-    const fullView = playerContainer.querySelector('.full-view');
-    const minimizeBtn = playerContainer.querySelector('.minimize-btn');
-
-    // 初始状态：mini-view 显示，full-view 隐藏（如果CSS没有控制好）
-    if (miniView && fullView) {
-        // 避免重复设置导致闪烁
-        if (fullView.style.display !== 'none') fullView.style.display = 'none';
-        if (miniView.style.display !== 'flex') miniView.style.display = 'flex';
-    }
-
-    // 点击 mini-view 展开
-    if (miniView) {
-        miniView.addEventListener('click', function(e) {
-            e.stopPropagation();
-            if (fullView) fullView.style.display = 'flex';
-            if (miniView) miniView.style.display = 'none';
-        });
-    }
-
-    // 点击 minimize-btn 收起
-    if (minimizeBtn) {
-        minimizeBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            if (fullView) fullView.style.display = 'none';
-            if (miniView) miniView.style.display = 'flex';
-        });
-    }
-
-    // 歌单按钮：三条杠 id="list-btn"
+    const fullView = player.querySelector('.full-view');
+    const minimizeBtn = player.querySelector('.minimize-btn');
     const listBtn = document.getElementById('list-btn');
     const playlist = document.getElementById('playlist');
-    if (listBtn && playlist) {
-        listBtn.addEventListener('click', function(e) {
+
+    if (miniView && fullView) {
+        fullView.style.display = 'none';
+        miniView.style.display = 'flex';
+        miniView.onclick = (e) => {
             e.stopPropagation();
-            // 如果歌单内容为空，显示提示
-            if (playlist.innerHTML.trim() === '' || playlist.children.length === 0) {
-                playlist.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-secondary);">歌单加载中…</div>';
-            }
-            // 切换显示
-            if (playlist.style.display === 'block') {
-                playlist.style.display = 'none';
-            } else {
-                playlist.style.display = 'block';
-            }
-        });
+            fullView.style.display = 'flex';
+            miniView.style.display = 'none';
+        };
     }
-    if (playlist) playlist.style.display = 'none';
+    if (minimizeBtn) {
+        minimizeBtn.onclick = (e) => {
+            e.stopPropagation();
+            fullView.style.display = 'none';
+            miniView.style.display = 'flex';
+        };
+    }
+    if (listBtn && playlist) {
+        listBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (playlist.innerHTML.trim() === '') {
+                playlist.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-secondary);">🎵 歌单加载中...</div>';
+            }
+            playlist.style.display = playlist.style.display === 'block' ? 'none' : 'block';
+        };
+        playlist.style.display = 'none';
+    }
 }
 
 // ========== 页面初始化 ==========
@@ -95,19 +95,12 @@ function onDOMReady() {
     // 初始化音乐悬浮器
     initMusicPlayer();
 
-    // 绑定高级功能里的"悬浮音乐播放器"开关
-    const musicToggle = document.getElementById('music-player-toggle');
-    const player = document.getElementById('player');
-    if (musicToggle && player) {
-        musicToggle.addEventListener('click', function() {
-            if (player.style.display === 'none' || player.style.display === '') {
-                player.style.display = 'block';
-            } else {
-                player.style.display = 'none';
-            }
-        });
+    // 组字卡入口绑定
+    const comboBtn = document.getElementById('openComboBtn');
+    if (comboBtn && typeof window.openComboManager === 'function') {
+        comboBtn.addEventListener('click', window.openComboManager);
     }
-
+}
     // 组字卡入口绑定
     const comboBtn = document.getElementById('openComboBtn');
     if (comboBtn && typeof window.openComboManager === 'function') {
