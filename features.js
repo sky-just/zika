@@ -1,6 +1,4 @@
-// ===== features.js 修复版 =====
-// 修复：音乐悬浮器初始化、歌单弹出、开关控制、公告面板状态
-
+// features.js - 修正语法 + 完整功能
 (function() {
 
 // ========== 公告栏面板切换 ==========
@@ -12,7 +10,7 @@ function switchToAnnouncementPanel() {
         if (replyList) replyList.style.display = 'none';
         if (subTabs) subTabs.style.display = 'none';
         announcePanel.style.display = 'block';
-        window.currentMajorTab = 'announcement';   // 关键：设置全局状态
+        window.currentMajorTab = 'announcement';
     }
 }
 
@@ -32,18 +30,18 @@ function reopenDailyGreeting() {
         modal.classList.remove('hidden');
     }
 }
+
 // ========== 沉浸模式切换 ==========
 function toggleImmersiveMode() {
     document.body.classList.toggle('immersive-mode');
 }
-
 
 // ========== 音乐悬浮器初始化 ==========
 function initMusicPlayer() {
     const player = document.getElementById('player');
     if (!player) return;
 
-    // 绑定音乐播放器开关
+    // 开关绑定
     const musicToggle = document.getElementById('music-player-toggle');
     if (musicToggle && !musicToggle._bound) {
         musicToggle._bound = true;
@@ -98,39 +96,15 @@ function initMusicPlayer() {
 
 // ========== 页面初始化 ==========
 function onDOMReady() {
-    // 初始化音乐悬浮器
     initMusicPlayer();
 
-    // 组字卡入口绑定
-    const comboBtn = document.getElementById('openComboBtn');
-    if (comboBtn && typeof window.openComboManager === 'function') {
-        comboBtn.addEventListener('click', window.openComboManager);
-    }
-}
-    // 组字卡入口绑定
     const comboBtn = document.getElementById('openComboBtn');
     if (comboBtn && typeof window.openComboManager === 'function') {
         comboBtn.addEventListener('click', window.openComboManager);
     }
 }
 
-// 确保音乐播放器在 load 后初始化
-window.addEventListener('load', function() {
-    setTimeout(initMusicPlayer, 100);
-});
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', onDOMReady);
-} else {
-    onDOMReady();
-}
-
-// 对外暴露函数
-window.switchToAnnouncementPanel = switchToAnnouncementPanel;
-window.closeDailyGreeting = closeDailyGreeting;
-window.reopenDailyGreeting = reopenDailyGreeting;
-window.toggleImmersiveMode = toggleImmersiveMode;
-window.initMusicPlayer = initMusicPlayer;
+// ========== 组字卡入口函数 ==========
 window.openComboManager = function() {
     const modal = document.getElementById('custom-replies-modal');
     if (modal && typeof showModal === 'function') {
@@ -145,11 +119,30 @@ window.openComboManager = function() {
                 break;
             }
         }
-        if (!found) {
+        if (!found && typeof showNotification === 'function') {
             showNotification('请先在自定义回复中添加"组字卡"选项卡', 'info');
         }
-    } else {
+    } else if (typeof showNotification === 'function') {
         showNotification('请先打开自定义回复面板', 'info');
     }
 };
+
+// ========== 启动 ==========
+window.addEventListener('load', function() {
+    setTimeout(initMusicPlayer, 100);
+});
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', onDOMReady);
+} else {
+    onDOMReady();
+}
+
+// 对外暴露
+window.switchToAnnouncementPanel = switchToAnnouncementPanel;
+window.closeDailyGreeting = closeDailyGreeting;
+window.reopenDailyGreeting = reopenDailyGreeting;
+window.toggleImmersiveMode = toggleImmersiveMode;
+window.initMusicPlayer = initMusicPlayer;
+
 })();
