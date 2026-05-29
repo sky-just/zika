@@ -1,4 +1,4 @@
-// listeners.js - 完整稳定版
+// listeners.js - 干净版（无音乐播放器补丁，无冲突）
 function setupEventListeners() {
     // 设置按钮
     var settingsBtn = document.getElementById('settings-btn');
@@ -115,15 +115,24 @@ function setupEventListeners() {
     document.querySelectorAll('[id*="back-"]').forEach(function(btn) {
         if (btn.id === 'back-advanced') return;
         btn.addEventListener('click', function() {
-      var parentModal = btn.closest('.modal');
+            var parentModal = btn.closest('.modal');
             if (parentModal && typeof hideModal === 'function') hideModal(parentModal);
             var settingsModal = document.getElementById('settings-modal');
             if (settingsModal && typeof showModal === 'function') showModal(settingsModal);
         });
     });
+
+    // 点击弹窗空白区域关闭（修复设置弹窗点空白关不掉）
+    document.querySelectorAll('.modal').forEach(function(modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal && typeof hideModal === 'function') {
+                hideModal(modal);
+            }
+        });
+    });
 }
 
-// 补齐缺失的初始化函数
+// 补齐缺失的初始化函数（不影响音乐播放器）
 if (typeof initializeSession === 'undefined') {
     window.initializeSession = async function() {
         if (!window.SESSION_ID) {
@@ -139,31 +148,11 @@ if (typeof initializeRandomUI === 'undefined') {
         if (inputEl) inputEl.placeholder = '说点什么吧...';
     };
 }
-if (typeof initMusicPlayer === 'undefined') {
-    window.initMusicPlayer = function() {
-        var player = document.getElementById('player');
-        if (!player) return;
-        
-        // 恢复音乐播放器的显示逻辑
-        var musicToggle = document.getElementById('music-player-toggle');
-        if (musicToggle && !musicToggle._fixed) {
-            musicToggle._fixed = true;
-            musicToggle.addEventListener('click', function() {
-                if (player.classList.contains('visible')) {
-                    player.classList.remove('visible');
-                    showNotification('音乐播放器已关闭', 'info');
-                } else {
-                    player.classList.add('visible');
-                    showNotification('音乐播放器已开启', 'success');
-                }
-            });
-        }
-    };
-}
 if (typeof checkStatusChange === 'undefined') {
     window.checkStatusChange = function() {};
 }
-// 强制修复组字卡面板内的新建按钮
+
+// 组字卡面板内新建按钮修复（保留）
 setTimeout(function() {
     var addComboBtn = document.getElementById('add-combo-inner-btn');
     if (addComboBtn && !addComboBtn._fixed) {
@@ -177,29 +166,20 @@ setTimeout(function() {
                 separator: ' '
             });
             if (typeof throttledSaveData === 'function') throttledSaveData();
-            // 刷新列表
             var list = document.getElementById('combo-list-inner');
             if (list && typeof window.renderComboList === 'function') {
                 window.renderComboList();
             } else if (list) {
-                var idx = window.comboCards.length - 1;
                 list.innerHTML += '<div style="padding:8px;background:var(--primary-bg);border-radius:8px;margin-bottom:6px;">✅ 已添加「新组合」</div>';
             }
-            showNotification('新组合已添加', 'success');
+            if (typeof showNotification === 'function') showNotification('新组合已添加', 'success');
         });
     }
 }, 1500);
+
+// 启动监听器
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupEventListeners);
 } else {
     setupEventListeners();
 }
-// ===== 强制初始化音乐播放器 =====
-(function() {
-    if (typeof initMusicPlayer === 'function') {
-        // 延迟执行，确保 DOM 已就绪
-        setTimeout(function() {
-            initMusicPlayer();
-        }, 1000);
-    }
-})();
