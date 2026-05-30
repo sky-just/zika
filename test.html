@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>功能测试页</title>
+<style>
+  body { font-family: sans-serif; padding: 20px; background: #1a1a2e; color: #eee; }
+  button { display: block; width: 100%; margin: 8px 0; padding: 14px; border: 1px solid #444; border-radius: 10px; background: #16213e; color: #eee; font-size: 15px; cursor: pointer; }
+  button.green { background: #0f3460; border-color: #e94560; }
+  #result { margin-top: 16px; padding: 12px; background: #0f0f1a; border-radius: 8px; font-size: 13px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h2>功能测试页</h2>
+<p>点每个按钮，看下方是否有反应</p>
+<button onclick="test('settings')">打开设置</button>
+<button onclick="test('theme')">切换日夜模式</button>
+<button onclick="test('dailyGreeting')">打开今日状态</button>
+<button onclick="test('customReplies')">打开自定义回复</button>
+<button onclick="test('mood')">打开心情手账</button>
+<button onclick="test('music')">打开音乐播放器</button>
+<button onclick="test('groupChat')">打开群聊群组</button>
+<button onclick="test('combo')">打开组字卡</button>
+<button class="green" onclick="test('sendImage')">测试图片发送</button>
+<div id="result">等待测试...</div>
+
+<script>
+var result = document.getElementById('result');
+function log(msg) {
+  result.textContent += '\n' + msg;
+}
+function test(type) {
+  result.textContent = '测试: ' + type + '\n';
+  try {
+    if (type === 'settings') {
+      var el = document.getElementById('settings-modal');
+      log(el ? '✅ 设置弹窗存在' : '❌ 设置弹窗不存在');
+      log('showModal函数: ' + (typeof showModal));
+      log('hideModal函数: ' + (typeof hideModal));
+    }
+    if (type === 'theme') {
+      var btn = document.getElementById('theme-toggle');
+      log(btn ? '✅ 日夜切换按钮存在' : '❌ 日夜切换按钮不存在');
+      log('settings对象: ' + (typeof settings));
+      if (typeof settings !== 'undefined') log('isDarkMode: ' + settings.isDarkMode);
+    }
+    if (type === 'dailyGreeting') {
+      log('closeDailyGreeting: ' + (typeof closeDailyGreeting));
+      log('reopenDailyGreeting: ' + (typeof reopenDailyGreeting));
+      var modal = document.getElementById('daily-greeting-modal');
+      log(modal ? '✅ 每日问候弹窗存在' : '❌ 每日问候弹窗不存在');
+    }
+    if (type === 'customReplies') {
+      log('currentMajorTab: ' + (typeof window.currentMajorTab !== 'undefined' ? window.currentMajorTab : 'undefined'));
+      log('currentSubTab: ' + (typeof window.currentSubTab !== 'undefined' ? window.currentSubTab : 'undefined'));
+      log('renderReplyLibrary: ' + (typeof renderReplyLibrary));
+      var modal = document.getElementById('custom-replies-modal');
+      log(modal ? '✅ 自定义回复弹窗存在' : '❌ 自定义回复弹窗不存在');
+    }
+    if (type === 'mood') {
+      log('moodData: ' + (typeof moodData));
+      log('renderMoodCalendar: ' + (typeof renderMoodCalendar));
+      var modal = document.getElementById('mood-modal');
+      log(modal ? '✅ 心情手账弹窗存在' : '❌ 心情手账弹窗不存在');
+    }
+    if (type === 'music') {
+      var player = document.getElementById('player');
+      log(player ? '✅ 音乐播放器存在' : '❌ 音乐播放器不存在');
+      log('initMusicPlayer: ' + (typeof initMusicPlayer));
+      var mini = document.getElementById('mini-view');
+      log(mini ? '✅ mini-view存在' : '❌ mini-view不存在');
+      var listBtn = document.getElementById('list-btn');
+      log(listBtn ? '✅ 歌单按钮存在' : '❌ 歌单按钮不存在');
+    }
+    if (type === 'groupChat') {
+      var modal = document.getElementById('group-chat-modal');
+      log(modal ? '✅ 群聊弹窗存在' : '❌ 群聊弹窗不存在');
+    }
+    if (type === 'combo') {
+      log('openComboManager: ' + (typeof openComboManager));
+      log('comboCards: ' + (typeof window.comboCards !== 'undefined' ? JSON.stringify(window.comboCards) : 'undefined'));
+    }
+    if (type === 'sendImage') {
+      log('sendMessage函数: ' + (typeof sendMessage));
+      log('DOMElements对象: ' + (typeof DOMElements));
+      if (typeof DOMElements !== 'undefined') {
+        log('messageInput: ' + (DOMElements.messageInput ? '✅' : '❌'));
+        log('imageInput: ' + (DOMElements.imageInput ? '✅' : '❌'));
+      }
+    }
+  } catch(e) {
+    log('❌ 错误: ' + e.message);
+  }
+}
+</script>
+</body>
+</html>
