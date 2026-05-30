@@ -73,7 +73,21 @@ const loadData = async () => {
             localforage.getItem(getStorageKey('chatMessages')),
             localforage.getItem(getStorageKey('customReplies')),
             localforage.getItem(getStorageKey('customPokes')),
-            localforage.getItem(getStorageKey('anniversaries'))
+            localforage.getItem(getStorageKey('customStatuses')),
+            localforage.getItem(getStorageKey('customMottos')),
+            localforage.getItem(getStorageKey('customIntros')),
+            localforage.getItem(getStorageKey('anniversaries')),
+            localforage.getItem(getStorageKey('stickerLibrary')),
+            localforage.getItem(getStorageKey('customThemes')),
+            localforage.getItem(getStorageKey('chatBackground')),
+            localforage.getItem(getStorageKey('partnerAvatar')),
+            localforage.getItem(getStorageKey('myAvatar')),
+            localforage.getItem(getStorageKey('partnerPersonas')),
+            localforage.getItem(getStorageKey('myStickerLibrary')),
+            localforage.getItem(getStorageKey('customReplyGroups')),
+            localforage.getItem(getStorageKey('customPokeGroups')),
+            localforage.getItem(getStorageKey('customStatusGroups')),
+            localforage.getItem(getStorageKey('customEmojis'))
         ]);
         const getVal = (i) => results[i].status === 'fulfilled' ? results[i].value : null;
         const savedSettings = getVal(0);
@@ -84,7 +98,21 @@ const loadData = async () => {
         } else messages = [];
         if (getVal(2)) customReplies = getVal(2);
         if (getVal(3)) customPokes = getVal(3);
-        if (getVal(4)) anniversaries = getVal(4);
+        if (getVal(4)) customStatuses = getVal(4);
+        if (getVal(5)) customMottos = getVal(5);
+        if (getVal(6)) customIntros = getVal(6);
+        if (getVal(7)) anniversaries = getVal(7);
+        if (getVal(8)) stickerLibrary = getVal(8);
+        if (getVal(9)) customThemes = getVal(9);
+        if (getVal(10)) { const bg = getVal(10); if (bg) applyBackground(bg); }
+        if (getVal(11)) { const av = getVal(11); if (av && DOMElements.partner && DOMElements.partner.avatar) updateAvatar(DOMElements.partner.avatar, av); }
+        if (getVal(12)) { const av = getVal(12); if (av && DOMElements.me && DOMElements.me.avatar) updateAvatar(DOMElements.me.avatar, av); }
+        if (getVal(13)) partnerPersonas = getVal(13);
+        if (getVal(14)) myStickerLibrary = getVal(14);
+        if (getVal(15)) window.customReplyGroups = getVal(15);
+        if (getVal(16)) window.customPokeGroups = getVal(16);
+        if (getVal(17)) window.customStatusGroups = getVal(17);
+        if (getVal(18)) customEmojis = getVal(18);
         displayedMessageCount = HISTORY_BATCH_SIZE;
         updateUI();
     } catch (e) { settings = getDefaultSettings(); messages = []; updateUI(); }
@@ -93,13 +121,25 @@ const loadData = async () => {
 const saveData = async () => {
     window.saveData = saveData;
     if (!SESSION_ID) return;
-    await Promise.allSettled([
-        localforage.setItem(getStorageKey('chatSettings'), settings),
-        localforage.setItem(getStorageKey('chatMessages'), messages),
-        localforage.setItem(getStorageKey('customReplies'), customReplies),
-        localforage.setItem(getStorageKey('customPokes'), customPokes),
-        localforage.setItem(getStorageKey('anniversaries'), anniversaries)
-    ]);
+    const promises = [];
+    promises.push({ key: 'chatSettings', val: () => localforage.setItem(getStorageKey('chatSettings'), settings) });
+    promises.push({ key: 'chatMessages', val: () => localforage.setItem(getStorageKey('chatMessages'), messages) });
+    promises.push({ key: 'customReplies', val: () => localforage.setItem(getStorageKey('customReplies'), customReplies) });
+    promises.push({ key: 'customPokes', val: () => localforage.setItem(getStorageKey('customPokes'), customPokes) });
+    promises.push({ key: 'customStatuses', val: () => localforage.setItem(getStorageKey('customStatuses'), customStatuses) });
+    promises.push({ key: 'customMottos', val: () => localforage.setItem(getStorageKey('customMottos'), customMottos) });
+    promises.push({ key: 'customIntros', val: () => localforage.setItem(getStorageKey('customIntros'), customIntros) });
+    promises.push({ key: 'anniversaries', val: () => localforage.setItem(getStorageKey('anniversaries'), anniversaries) });
+    promises.push({ key: 'stickerLibrary', val: () => localforage.setItem(getStorageKey('stickerLibrary'), stickerLibrary) });
+    promises.push({ key: 'myStickerLibrary', val: () => localforage.setItem(getStorageKey('myStickerLibrary'), myStickerLibrary) });
+    promises.push({ key: 'customThemes', val: () => localforage.setItem(getStorageKey('customThemes'), customThemes) });
+    promises.push({ key: 'customEmojis', val: () => localforage.setItem(getStorageKey('customEmojis'), customEmojis) });
+    promises.push({ key: 'partnerAvatar', val: () => { const img = DOMElements.partner.avatar.querySelector('img'); if (img) localforage.setItem(getStorageKey('partnerAvatar'), img.src); else localforage.removeItem(getStorageKey('partnerAvatar')); } });
+    promises.push({ key: 'myAvatar', val: () => { const img = DOMElements.me.avatar.querySelector('img'); if (img) localforage.setItem(getStorageKey('myAvatar'), img.src); else localforage.removeItem(getStorageKey('myAvatar')); } });
+    if (window.customReplyGroups) promises.push({ key: 'customReplyGroups', val: () => localforage.setItem(getStorageKey('customReplyGroups'), window.customReplyGroups) });
+    if (window.customPokeGroups) promises.push({ key: 'customPokeGroups', val: () => localforage.setItem(getStorageKey('customPokeGroups'), window.customPokeGroups) });
+    if (window.customStatusGroups) promises.push({ key: 'customStatusGroups', val: () => localforage.setItem(getStorageKey('customStatusGroups'), window.customStatusGroups) });
+    await Promise.allSettled(promises.map(p => p.val()));
 };
 
 function renderMessages(preserveScroll = false) {
@@ -147,13 +187,36 @@ const addMessage = (message) => {
 
 function sendMessage(textOverride = null) {
     const text = textOverride || DOMElements.messageInput.value.trim();
-    if (!text) return;
+    const imageFile = DOMElements.imageInput && DOMElements.imageInput.files[0];
+    if (!text && !imageFile) return;
     DOMElements.messageInput.value = '';
-    addMessage({ id: Date.now(), sender: 'user', text, timestamp: new Date(), status: 'sent', type: 'normal' });
-    playSound('send');
-    const randomDelay = settings.replyDelayMin + Math.random() * (settings.replyDelayMax - settings.replyDelayMin);
-    if (settings.typingIndicatorEnabled) showTypingIndicator();
-    setTimeout(() => { simulateReply(); }, randomDelay);
+    DOMElements.messageInput.style.height = '46px';
+    if (imageFile && imageFile.size > 5 * 1024 * 1024) {
+        showNotification('图片大小不能超过5MB', 'error');
+        if (DOMElements.imageInput) DOMElements.imageInput.value = '';
+        return;
+    }
+    const createMessage = (imgSrc) => {
+        addMessage({
+            id: Date.now(),
+            sender: 'user',
+            text: text || '',
+            image: imgSrc || null,
+            timestamp: new Date(),
+            status: 'sent',
+            type: 'normal'
+        });
+        playSound('send');
+        const randomDelay = settings.replyDelayMin + Math.random() * (settings.replyDelayMax - settings.replyDelayMin);
+        if (settings.typingIndicatorEnabled) showTypingIndicator();
+        setTimeout(() => { simulateReply(); }, randomDelay);
+    };
+    if (imageFile) {
+        optimizeImage(imageFile).then(createMessage).catch(() => showNotification('图片处理失败', 'error'));
+        if (DOMElements.imageInput) DOMElements.imageInput.value = '';
+    } else {
+        createMessage();
+    }
 }
 
 function showTypingIndicator() {
@@ -166,7 +229,6 @@ window.simulateReply = function() {
         showNotification('回复库为空，请先添加字卡', 'info');
         return;
     }
-
     function getReplyFromComboOrSingle(pool) {
         var comboCards = window.comboCards;
         if (comboCards && comboCards.length > 0 && Math.random() < 0.3) {
@@ -175,15 +237,11 @@ window.simulateReply = function() {
         }
         return pool[Math.floor(Math.random() * pool.length)];
     }
-
     var disabledItemsOnce = new Set();
     try { const raw = localStorage.getItem('disabledReplyItems'); if (raw) disabledItemsOnce = new Set(JSON.parse(raw)); } catch(e) {}
     var replyPoolOnce = customReplies.filter(r => !disabledItemsOnce.has(String(r).trim()));
-
     if (!replyPoolOnce.length) { showNotification('可用回复为空', 'info'); return; }
-
     showTypingIndicator();
-
     var replyCount = Math.random() < 0.7 ? 1 : 2;
     var delay = 0;
     for (var i = 0; i < replyCount; i++) {
@@ -192,10 +250,9 @@ window.simulateReply = function() {
         (function(idx) {
             setTimeout(function() {
                 try {
-                    var replyPool = replyPoolOnce;
                     var replyText = '';
                     for (var t = 0; t < 6; t++) {
-                        var picked = getReplyFromComboOrSingle(replyPool);
+                        var picked = getReplyFromComboOrSingle(replyPoolOnce);
                         if (picked && String(picked).trim()) {
                             replyText = String(picked).trim();
                             break;
