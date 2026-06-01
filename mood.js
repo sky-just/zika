@@ -160,6 +160,15 @@ function toggleBatchFavoriteMode() {
     if (annToggleBtn) annToggleBtn.classList.remove('active');
 
     showNotification('纪念日已添加', 'success');
+if (typeof renderAnniversariesList !== 'function') {
+    window.renderAnniversariesList = function() {
+        var list = document.getElementById('ann-list-container');
+        if (!list) return;
+        list.innerHTML = anniversaries.map(function(ann) {
+            return '<div class="ann-item-card">' + ann.name + '</div>';
+        }).join('');
+    };
+}
     if (typeof playSound === 'function') playSound('anniversary');
 }
 
