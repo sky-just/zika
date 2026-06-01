@@ -69,7 +69,7 @@ function setupEventListeners() {
         'custom-replies-function': 'custom-replies-modal',
         'music-player-toggle': null,
         'stats-function': 'stats-modal',
-        'decision-function': 'decision-modal',
+        'decision-function': 'decision-menu-modal',
         'fortune-lenormand-function': 'fortune-lenormand-modal',
         'anniversary-function': 'anniversary-modal',
         'mood-function': 'mood-modal',
