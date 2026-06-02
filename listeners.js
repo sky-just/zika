@@ -1,4 +1,4 @@
-// listeners.js - 干净版（无音乐播放器补丁，无冲突）
+// listeners.js - 最终稳定版（修复抉择助手、信封投递、顶部按钮）
 function setupEventListeners() {
     // 设置按钮
     var settingsBtn = document.getElementById('settings-btn');
@@ -79,23 +79,28 @@ function setupEventListeners() {
     Object.keys(advFuncMap).forEach(function(funcId) {
         var btn = document.getElementById(funcId);
         var modalId = advFuncMap[funcId];
-if (btn && modalId) {
-    btn.addEventListener('click', function() {
-        var advModal = document.getElementById('advanced-modal');
-        if (advModal && typeof hideModal === 'function') hideModal(advModal);
-        var targetModal = document.getElementById(modalId);
-        if (targetModal) {
-            if (typeof showModal === 'function') showModal(targetModal);
-            else targetModal.style.display = 'flex';
+        if (btn && modalId) {
+            btn.addEventListener('click', function() {
+                var advModal = document.getElementById('advanced-modal');
+                if (advModal && typeof hideModal === 'function') hideModal(advModal);
+                var targetModal = document.getElementById(modalId);
+                if (targetModal) {
+                    if (typeof showModal === 'function') showModal(targetModal);
+                    else targetModal.style.display = 'flex';
+                }
+                // 抉择助手：初始化内部按钮事件
+                if (funcId === 'decision-function' && typeof initDecisionModule === 'function') {
+                    setTimeout(initDecisionModule, 150);
+                }
+                // 信封投递：加载数据并渲染列表
+                if (funcId === 'envelope-function' && typeof loadEnvelopeData === 'function') {
+                    setTimeout(function() {
+                        loadEnvelopeData();
+                        renderEnvelopeLists();
+                    }, 150);
+                }
+            });
         }
-        if (funcId === 'decision-function' && typeof initDecisionModule === 'function') {
-            setTimeout(initDecisionModule, 100);
-        }
-        if (funcId === 'envelope-function' && typeof loadEnvelopeData === 'function') {
-            setTimeout(loadEnvelopeData, 100);
-        }
-    });
-}
     });
 
     // 返回按钮（高级功能返回设置）
@@ -128,7 +133,7 @@ if (btn && modalId) {
         });
     });
 
-    // 点击弹窗空白区域关闭（修复设置弹窗点空白关不掉）
+    // 点击弹窗空白区域关闭
     document.querySelectorAll('.modal').forEach(function(modal) {
         modal.addEventListener('click', function(e) {
             if (e.target === modal && typeof hideModal === 'function') {
@@ -138,7 +143,7 @@ if (btn && modalId) {
     });
 }
 
-// 补齐缺失的初始化函数（不影响音乐播放器）
+// 补齐缺失的初始化函数
 if (typeof initializeSession === 'undefined') {
     window.initializeSession = async function() {
         if (!window.SESSION_ID) {
@@ -183,14 +188,7 @@ setTimeout(function() {
     }
 }, 1500);
 
-// 启动监听器
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupEventListeners);
-} else {
-    setupEventListeners();
-}
-
-// 缺失的顶部按钮绑定（独立执行，不放在 else 里）
+// 顶部按钮绑定（独立执行）
 var groupChatBtn = document.getElementById('group-chat-btn');
 if (groupChatBtn) {
     groupChatBtn.addEventListener('click', function() {
@@ -204,4 +202,11 @@ if (dailyGreetingBtn) {
     dailyGreetingBtn.addEventListener('click', function() {
         if (typeof reopenDailyGreeting === 'function') reopenDailyGreeting();
     });
+}
+
+// 启动监听器
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupEventListeners);
+} else {
+    setupEventListeners();
 }
