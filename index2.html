@@ -25,6 +25,24 @@
     <style id="css-live-preview-style"></style>
 </head>
 <body>
+    <div id="error-reporter" style="position:fixed;top:0;left:0;right:0;z-index:100000;background:#ffdddd;color:#cc0000;padding:8px;font-size:12px;font-family:monospace;max-height:200px;overflow-y:auto;display:none;"></div>
+<script>
+(function() {
+    var el = document.getElementById('error-reporter');
+    function show(msg) {
+        if (el) {
+            el.style.display = 'block';
+            el.innerHTML += '<div>' + msg.replace(/</g,'&lt;') + '</div>';
+        }
+    }
+    window.addEventListener('error', function(e) {
+        show('ERROR: ' + e.message + ' (at ' + e.filename + ':' + e.lineno + ':' + e.colno + ')');
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+        show('UNHANDLED REJECTION: ' + (e.reason ? (e.reason.message || e.reason) : ''));
+    });
+})();
+</script>
 <div id="splash-declaration">
     <div class="splash-bg-stars" id="splash-stars"></div>
     <div class="splash-glow-1"></div>
