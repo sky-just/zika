@@ -79,17 +79,23 @@ function setupEventListeners() {
     Object.keys(advFuncMap).forEach(function(funcId) {
         var btn = document.getElementById(funcId);
         var modalId = advFuncMap[funcId];
-        if (btn && modalId) {
-            btn.addEventListener('click', function() {
-                var advModal = document.getElementById('advanced-modal');
-                if (advModal && typeof hideModal === 'function') hideModal(advModal);
-                var targetModal = document.getElementById(modalId);
-                if (targetModal) {
-                    if (typeof showModal === 'function') showModal(targetModal);
-                    else targetModal.style.display = 'flex';
-                }
-            });
+if (btn && modalId) {
+    btn.addEventListener('click', function() {
+        var advModal = document.getElementById('advanced-modal');
+        if (advModal && typeof hideModal === 'function') hideModal(advModal);
+        var targetModal = document.getElementById(modalId);
+        if (targetModal) {
+            if (typeof showModal === 'function') showModal(targetModal);
+            else targetModal.style.display = 'flex';
         }
+        if (funcId === 'decision-function' && typeof initDecisionModule === 'function') {
+            setTimeout(initDecisionModule, 100);
+        }
+        if (funcId === 'envelope-function' && typeof loadEnvelopeData === 'function') {
+            setTimeout(loadEnvelopeData, 100);
+        }
+    });
+}
     });
 
     // 返回按钮（高级功能返回设置）
