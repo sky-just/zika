@@ -2289,32 +2289,26 @@
     }
 })();
   </script>
-<div id="err-box" style="position:fixed;top:0;left:0;right:0;z-index:100000;background:#ffdddd;color:#cc0000;padding:8px;font-size:11px;font-family:monospace;max-height:200px;overflow-y:auto;display:none;"></div>
+<div id="state-box" style="position:fixed;bottom:0;left:0;right:0;z-index:100000;background:#e6f7ff;color:#003366;padding:8px;font-size:11px;font-family:monospace;max-height:200px;overflow-y:auto;border-top:2px solid #0066cc;"></div>
 <script>
 (function() {
-    var el = document.getElementById('err-box');
+    var el = document.getElementById('state-box');
     if (!el) return;
-    function show(msg) {
-        el.style.display = 'block';
-        el.innerHTML += '<div style="border-bottom:1px solid rgba(255,0,0,0.2);padding:2px 0;">' + msg + '</div>';
-    }
-    window.addEventListener('error', function(e) {
-        var msg = e.message;
-        if (e.filename) msg += ' | 文件: ' + (e.filename.split('/').pop() || e.filename);
-        if (e.lineno) msg += ' | 第' + e.lineno + '行';
-        show(msg);
+    function log(msg) { el.textContent += msg + '\n'; }
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            el.textContent = '状态检查:\n';
+            log('coin-toss-overlay: ' + (document.getElementById('coin-toss-overlay') ? '存在' : '不存在'));
+            log('handleCoinToss: ' + (typeof handleCoinToss));
+            log('initDecisionModule: ' + (typeof initDecisionModule));
+            log('lastCoinResult: ' + (typeof lastCoinResult !== 'undefined' ? lastCoinResult : 'undefined'));
+            log('send-envelope按钮: ' + (document.getElementById('send-envelope') ? '存在' : '不存在'));
+            log('handleSendEnvelope: ' + (typeof handleSendEnvelope));
+            log('addMessage: ' + (typeof addMessage));
+            log('messages: ' + (typeof messages !== 'undefined' ? ('数组, 长度' + messages.length) : 'undefined'));
+            log('envelopeData: ' + (typeof envelopeData !== 'undefined' ? JSON.stringify(envelopeData).substring(0,100) : 'undefined'));
+        }, 2000);
     });
-    window.addEventListener('unhandledrejection', function(e) {
-        show('Promise错误: ' + (e.reason ? (e.reason.message || String(e.reason)) : '未知'));
-    });
-    var origClick = document.addEventListener;
-    document.addEventListener = function(type, listener, options) {
-        origClick.call(document, type, function(e) {
-            try { return listener.apply(this, arguments); } catch(err) {
-                show('点击事件错误: ' + err.message + ' | 目标: ' + (e.target ? (e.target.id || e.target.className || e.target.tagName) : ''));
-            }
-        }, options);
-    };
 })();
 </script>
 </body>
