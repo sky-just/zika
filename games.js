@@ -1174,6 +1174,22 @@ function handleCoinToss() {
     if (retryBtn) retryBtn.style.display = 'none';
     if (DOMElements.animatedCoin) DOMElements.animatedCoin.style.transform = '';
     startCoinFlipAnimation();
+            // 绑定取消和重试按钮
+var cancelBtn = document.getElementById('cancel-coin-result');
+var retryBtn = document.getElementById('retry-coin-toss');
+if (cancelBtn && !cancelBtn._bound) {
+    cancelBtn._bound = true;
+    cancelBtn.addEventListener('click', function() {
+        var overlay = document.getElementById('coin-toss-overlay');
+        if (overlay) overlay.classList.remove('visible');
+    });
+}
+if (retryBtn && !retryBtn._bound) {
+    retryBtn._bound = true;
+    retryBtn.addEventListener('click', function() {
+        startCoinFlipAnimation();
+    });
+}
 }
 window.handleCoinToss = handleCoinToss;
 
