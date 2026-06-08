@@ -2252,6 +2252,18 @@
 
 <!-- 游戏与合并模块 -->
 <script src="games.js"></script>
+        <script>
+window._gamesLoadError = null;
+window.addEventListener('error', function(e) {
+    if (e.target && e.target.tagName === 'SCRIPT' && e.target.src.indexOf('games.js') !== -1) {
+        window._gamesLoadError = 'games.js 加载失败: ' + (e.target.src || '');
+        var div = document.createElement('div');
+        div.textContent = window._gamesLoadError;
+        div.style.cssText = 'position:fixed;top:0;left:0;z-index:100000;background:red;color:white;padding:8px;font-size:12px;';
+        document.body.appendChild(div);
+    }
+}, true);
+        </script>
 <script src="https://cdn.jsdelivr.net/gh/sky-just/zika@main/features.js"></script>
 
 <!-- 主程序 -->
