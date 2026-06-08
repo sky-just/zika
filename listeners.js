@@ -162,7 +162,110 @@ if (typeof initializeRandomUI === 'undefined') {
 if (typeof checkStatusChange === 'undefined') {
     window.checkStatusChange = function() {};
 }
+// ===== 抉择助手核心函数（从 games.js 修复） =====
+window.initDecisionModule = function() {
+    var openCoinBtn = document.getElementById('open-coin-toss');
+    var openWheelBtn = document.getElementById('open-wheel');
+    var closeMenuBtn = document.getElementById('close-decision-menu');
+    var closeWheelBtn = document.getElementById('close-wheel');
+    var addOptionBtn = document.getElementById('add-wheel-option');
+    var spinBtn = document.getElementById('spin-wheel-btn');
+    var sendResultBtn = document.getElementById('send-wheel-result');
 
+    if (openCoinBtn && !openCoinBtn._init) {
+        openCoinBtn._init = true;
+        openCoinBtn.addEventListener('click', function() {
+            var menu = document.getElementById('decision-menu-modal');
+            if (menu && typeof hideModal === 'function') hideModal(menu);
+            if (typeof handleCoinToss === 'function') handleCoinToss();
+        });
+    }
+    if (openWheelBtn && !openWheelBtn._init) {
+        openWheelBtn._init = true;
+        openWheelBtn.addEventListener('click', function() {
+            var menu = document.getElementById('decision-menu-modal');
+            if (menu && typeof hideModal === 'function') hideModal(menu);
+            if (typeof initPicker === 'function') initPicker();
+            var wheelModal = document.getElementById('wheel-modal');
+            if (wheelModal && typeof showModal === 'function') showModal(wheelModal);
+        });
+    }
+    if (closeMenuBtn && !closeMenuBtn._init) {
+        closeMenuBtn._init = true;
+        closeMenuBtn.addEventListener('click', function() {
+            var menu = document.getElementById('decision-menu-modal');
+            if (menu && typeof hideModal === 'function') hideModal(menu);
+        });
+    }
+    if (closeWheelBtn && !closeWheelBtn._init) {
+        closeWheelBtn._init = true;
+        closeWheelBtn.addEventListener('click', function() {
+            var modal = document.getElementById('wheel-modal');
+            if (modal && typeof hideModal === 'function') hideModal(modal);
+        });
+    }
+    if (spinBtn && !spinBtn._init) {
+        spinBtn._init = true;
+        spinBtn.addEventListener('click', function() {
+            if (typeof doPick === 'function') doPick();
+        });
+    }
+    if (sendResultBtn && !sendResultBtn._init) {
+        sendResultBtn._init = true;
+        sendResultBtn.addEventListener('click', function() {
+            if (typeof wheelResultText !== 'undefined' && wheelResultText) {
+                if (typeof sendMessage === 'function') sendMessage('✨ 随机抽签结果：' + wheelResultText, 'normal');
+                var modal = document.getElementById('wheel-modal');
+                if (modal && typeof hideModal === 'function') hideModal(modal);
+                wheelResultText = '';
+                sendResultBtn.style.display = 'none';
+            }
+        });
+    }
+    if (addOptionBtn && !addOptionBtn._init) {
+        addOptionBtn._init = true;
+        addOptionBtn.addEventListener('click', function() {
+            if (typeof wheelOptions !== 'undefined') {
+                wheelOptions.push('选项 ' + (wheelOptions.length + 1));
+                if (typeof renderPickerOptions === 'function') renderPickerOptions();
+                if (typeof renderPickerCards === 'function') renderPickerCards();
+            }
+        });
+    }
+};
+
+window.handleCoinToss = function() {
+    var overlay = document.getElementById('coin-toss-overlay');
+    if (!overlay) return;
+    overlay.classList.remove('finished');
+    overlay.classList.add('visible');
+    var resultText = document.getElementById('coin-result-text');
+    if (resultText) resultText.textContent = '';
+    var sendBtn = document.getElementById('send-coin-result');
+    if (sendBtn) sendBtn.style.display = 'none';
+    var retryBtn = document.getElementById('retry-coin-toss');
+    if (retryBtn) retryBtn.style.display = 'none';
+    var coin = document.getElementById('animated-coin');
+    if (coin) coin.style.transform = '';
+    
+    // 绑定取消按钮
+    var cancelBtn = document.getElementById('cancel-coin-result');
+    if (cancelBtn && !cancelBtn._coinBound) {
+        cancelBtn._coinBound = true;
+        cancelBtn.addEventListener('click', function() {
+            overlay.classList.remove('visible');
+        });
+    }
+    // 绑定重试按钮
+    if (retryBtn && !retryBtn._coinBound) {
+        retryBtn._coinBound = true;
+        retryBtn.addEventListener('click', function() {
+            startCoinFlipAnimation();
+        });
+    }
+    
+    startCoinFlipAnimation();
+};
 // 组字卡面板内新建按钮修复（保留）
 setTimeout(function() {
     var addComboBtn = document.getElementById('add-combo-inner-btn');
