@@ -2323,5 +2323,117 @@ window.addEventListener('error', function(e) {
     });
 })();
 </script>
+    <script>
+(function() {
+    // 错误提示函数
+    function showError(msg) {
+        var div = document.createElement('div');
+        div.textContent = '[抉择助手错误] ' + msg;
+        div.style.cssText = 'position:fixed;top:0;left:0;z-index:100000;background:red;color:white;padding:8px;font-size:12px;';
+        document.body.appendChild(div);
+    }
+
+    try {
+        // --- 重新定义 initDecisionModule ---
+        window.initDecisionModule = function() {
+            try {
+                var openCoinBtn = document.getElementById('open-coin-toss');
+                var openWheelBtn = document.getElementById('open-wheel');
+                // ... (其余按钮获取代码) ...
+                var sendResultBtn = document.getElementById('send-wheel-result');
+                var addOptionBtn = document.getElementById('add-wheel-option');
+
+                if (openCoinBtn && !openCoinBtn._init2) {
+                    openCoinBtn._init2 = true;
+                    openCoinBtn.addEventListener('click', function() {
+                        try {
+                            var menu = document.getElementById('decision-menu-modal');
+                            if (menu && typeof hideModal === 'function') hideModal(menu);
+                            if (typeof window.handleCoinToss === 'function') window.handleCoinToss();
+                        } catch(e) { showError('抛硬币按钮点击: ' + e.message); }
+                    });
+                }
+                if (openWheelBtn && !openWheelBtn._init2) {
+                    openWheelBtn._init2 = true;
+                    openWheelBtn.addEventListener('click', function() {
+                        try {
+                            var menu = document.getElementById('decision-menu-modal');
+                            if (menu && typeof hideModal === 'function') hideModal(menu);
+                            if (typeof initPicker === 'function') initPicker();
+                            var wheelModal = document.getElementById('wheel-modal');
+                            if (wheelModal && typeof showModal === 'function') showModal(wheelModal);
+                        } catch(e) { showError('抽签按钮点击: ' + e.message); }
+                    });
+                }
+                // ... (其余按钮绑定代码，保持结构一致) ...
+                if (addOptionBtn && !addOptionBtn._init2) {
+                    addOptionBtn._init2 = true;
+                    addOptionBtn.addEventListener('click', function() {
+                        try {
+                            if (typeof wheelOptions !== 'undefined') {
+                                wheelOptions.push('选项 ' + (wheelOptions.length + 1));
+                                if (typeof renderPickerOptions === 'function') renderPickerOptions();
+                                if (typeof renderPickerCards === 'function') renderPickerCards();
+                            }
+                        } catch(e) { showError('添加选项: ' + e.message); }
+                    });
+                }
+            } catch(e) { showError('initDecisionModule 执行失败: ' + e.message); }
+        };
+
+        // --- 重新定义 handleCoinToss ---
+        window.handleCoinToss = function() {
+            try {
+                var overlay = document.getElementById('coin-toss-overlay');
+                if (!overlay) return;
+                overlay.classList.remove('finished');
+                overlay.classList.add('visible');
+                var resultText = document.getElementById('coin-result-text');
+                if (resultText) resultText.textContent = '';
+                var sendBtn = document.getElementById('send-coin-result');
+                if (sendBtn) sendBtn.style.display = 'none';
+                var retryBtn = document.getElementById('retry-coin-toss');
+                if (retryBtn) retryBtn.style.display = 'none';
+                var coin = document.getElementById('animated-coin');
+                if (coin) coin.style.transform = '';
+                
+                // 绑定取消按钮
+                var cancelBtn = document.getElementById('cancel-coin-result');
+                if (cancelBtn && !cancelBtn._coinBound2) {
+                    cancelBtn._coinBound2 = true;
+                    cancelBtn.addEventListener('click', function() {
+                        try { overlay.classList.remove('visible'); } catch(e) { showError('关闭硬币: ' + e.message); }
+                    });
+                }
+                // 绑定重试按钮
+                if (retryBtn && !retryBtn._coinBound2) {
+                    retryBtn._coinBound2 = true;
+                    retryBtn.addEventListener('click', function() {
+                        try { if (typeof startCoinFlipAnimation === 'function') startCoinFlipAnimation(); } catch(e) { showError('重试硬币: ' + e.message); }
+                    });
+                }
+                
+                if (typeof startCoinFlipAnimation === 'function') {
+                    startCoinFlipAnimation();
+                } else {
+                    showError('核心动画函数 startCoinFlipAnimation 缺失，请检查 games.js');
+                }
+            } catch(e) { showError('handleCoinToss 执行失败: ' + e.message); }
+        };
+
+        // 延迟检查，确保旧脚本有机会运行，但我们的新定义会覆盖
+        setTimeout(function() {
+            if (typeof window.initDecisionModule !== 'function' || typeof window.handleCoinToss !== 'function') {
+                showError('错误：无法覆盖函数定义，请检查控制台。');
+            } else {
+                console.log('抉择助手函数已成功重新定义并挂载到全局。');
+            }
+        }, 1000);
+
+    } catch(e) {
+        showError('抉择助手修复脚本严重错误: ' + e.message);
+    }
+})();
+    </script>
 </body>
 </html>
