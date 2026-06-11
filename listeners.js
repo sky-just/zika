@@ -313,3 +313,5 @@ if (document.readyState === 'loading') {
 } else {
     setupEventListeners();
 }
+// 强制初始化抉择助手
+setTimeout(function() { if (typeof initDecisionModule === 'function') initDecisionModule(); }, 800);
