@@ -142,7 +142,7 @@ function setupEventListeners() {
         });
     });
 }
-
+setTimeout(function() { if (typeof initDecisionModule === 'function') initDecisionModule(); }, 500);
 // 补齐缺失的初始化函数
 if (typeof initializeSession === 'undefined') {
     window.initializeSession = async function() {
