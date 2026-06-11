@@ -429,7 +429,7 @@ function updateLenoNumDesc(n) {
     if (!desc) return;
     if (n === 1) desc.textContent = '单张牌 · 直达答案';
     else if (n === 3) desc.textContent = '三张牌 · 洞察全局';
-
+}
 function switchFLTab(tab) {
     document.querySelectorAll('.fl-tab').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.fl-panel').forEach(panel => panel.classList.remove('fl-panel-active'));
