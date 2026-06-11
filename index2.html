@@ -2301,28 +2301,6 @@ window.addEventListener('error', function(e) {
     }
 })();
   </script>
-<div id="state-box" style="position:fixed;bottom:0;left:0;right:0;z-index:100000;background:#e6f7ff;color:#003366;padding:8px;font-size:11px;font-family:monospace;max-height:200px;overflow-y:auto;border-top:2px solid #0066cc;"></div>
-<script>
-(function() {
-    var el = document.getElementById('state-box');
-    if (!el) return;
-    function log(msg) { el.textContent += msg + '\n'; }
-    window.addEventListener('load', function() {
-        setTimeout(function() {
-            el.textContent = '状态检查:\n';
-            log('coin-toss-overlay: ' + (document.getElementById('coin-toss-overlay') ? '存在' : '不存在'));
-            log('handleCoinToss: ' + (typeof handleCoinToss));
-            log('initDecisionModule: ' + (typeof initDecisionModule));
-            log('lastCoinResult: ' + (typeof lastCoinResult !== 'undefined' ? lastCoinResult : 'undefined'));
-            log('send-envelope按钮: ' + (document.getElementById('send-envelope') ? '存在' : '不存在'));
-            log('handleSendEnvelope: ' + (typeof handleSendEnvelope));
-            log('addMessage: ' + (typeof addMessage));
-            log('messages: ' + (typeof messages !== 'undefined' ? ('数组, 长度' + messages.length) : 'undefined'));
-            log('envelopeData: ' + (typeof envelopeData !== 'undefined' ? JSON.stringify(envelopeData).substring(0,100) : 'undefined'));
-        }, 2000);
-    });
-})();
-</script>
 
 </body>
 </html>
