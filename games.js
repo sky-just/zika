@@ -1174,9 +1174,10 @@ function handleCoinToss() {
     if (retryBtn) retryBtn.style.display = 'none';
     if (DOMElements.animatedCoin) DOMElements.animatedCoin.style.transform = '';
     startCoinFlipAnimation();
-            // 绑定取消和重试按钮
+    
+// 绑定取消和重试按钮（只在第一次执行时绑定）
 var cancelBtn = document.getElementById('cancel-coin-result');
-var retryBtn = document.getElementById('retry-coin-toss');
+var retryBtn2 = document.getElementById('retry-coin-toss');
 if (cancelBtn && !cancelBtn._bound) {
     cancelBtn._bound = true;
     cancelBtn.addEventListener('click', function() {
@@ -1184,9 +1185,9 @@ if (cancelBtn && !cancelBtn._bound) {
         if (overlay) overlay.classList.remove('visible');
     });
 }
-if (retryBtn && !retryBtn._bound) {
-    retryBtn._bound = true;
-    retryBtn.addEventListener('click', function() {
+if (retryBtn2 && !retryBtn2._bound) {
+    retryBtn2._bound = true;
+    retryBtn2.addEventListener('click', function() {
         startCoinFlipAnimation();
     });
 }
