@@ -962,6 +962,20 @@ function initDecisionModule() {
             hideModal(document.getElementById('advanced-modal'));
             showModal(document.getElementById('decision-menu-modal'));
         });
+                // 确保发送结果按钮能正常工作
+var sendCoinBtn = document.getElementById('send-coin-result');
+if (sendCoinBtn && !sendCoinBtn._coinSendBound) {
+    sendCoinBtn._coinSendBound = true;
+    sendCoinBtn.addEventListener('click', function() {
+        if (typeof lastCoinResult !== 'undefined' && lastCoinResult) {
+            if (typeof sendMessage === 'function') {
+                sendMessage('🪙 抛硬币结果：' + lastCoinResult, 'normal');
+            }
+            var overlay = document.getElementById('coin-toss-overlay');
+            if (overlay) overlay.classList.remove('visible');
+        }
+    });
+}
     }
 
     const openCoinBtn = document.getElementById('open-coin-toss');
