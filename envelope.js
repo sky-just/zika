@@ -320,60 +320,27 @@ window.deleteEnvLetter = function(event, section, id) {
     showNotification('已删除', 'success');
 };
 
+
 window.openNewEnvelopeForm = function() {
-    document.getElementById('env-outbox-section').style.display = 'none';
-    document.getElementById('env-inbox-section').style.display = 'none';
-    document.getElementById('env-main-close-btn').style.display = 'none';
-    document.getElementById('env-compose-title').textContent = '写一封信';
-    document.getElementById('envelope-input').value = '';
-    document.getElementById('env-send-to-chat').checked = false;
-    document.getElementById('env-compose-form').style.display = 'block';
-};
+    var outbox = document.getElementById('env-outbox-section');
+    var inbox = document.getElementById('env-inbox-section');
+    var closeBtn = document.getElementById('env-main-close-btn');
+    var form = document.getElementById('env-compose-form');
+    var input = document.getElementById('envelope-input');
+    var title = document.getElementById('env-compose-title');
+    var checkbox = document.getElementById('env-send-to-chat');
 
-window.cancelEnvelopeCompose = function() {
-    document.getElementById('env-compose-form').style.display = 'none';
-    document.getElementById('env-main-close-btn').style.display = 'flex';
-if (currentEnvTab === 'outbox') {
-        document.getElementById('env-outbox-section').style.display = 'block';
-    } else {
-        document.getElementById('env-inbox-section').style.display = 'block';
+    if (outbox) outbox.style.display = 'none';
+    if (inbox) inbox.style.display = 'none';
+    if (closeBtn) closeBtn.style.display = 'none';
+    if (title) title.textContent = '写一封信';
+    if (input) input.value = '';
+    if (checkbox) checkbox.checked = false;
+    if (form) {
+        form.style.display = 'block';
+        form.style.visibility = 'visible';
     }
 };
-
-window.handleSendEnvelope = function() {
-    // 依赖检查，防止闪退
-    if (typeof addMessage !== 'function') {
-        console.error('信封投递错误：addMessage 未定义');
-        showNotification('核心功能加载中，请稍后重试', 'error');
-        return;
-    }
-    if (typeof showNotification !== 'function') {
-        alert('错误：核心通知功能未加载，请刷新页面');
-        return;
-    }
-
-    const input = document.getElementById('envelope-input');
-    const content = input ? input.value.trim() : '';
-    if (!content) {
-        showNotification('信件内容不能为空', 'warning');
-        return;
-    }
-
-    const sendToChat = document.getElementById('env-send-to-chat')?.checked || false;
-    const now = Date.now();
-
-    if (sendToChat) {
-        addMessage({
-            id: now,
-            sender: 'user',
-            text: `📨 寄出了一封信：\n${content}`,
-            timestamp: new Date(),
-            status: 'sent',
-            type: 'normal'
-        });
-        playSound('send');
-    }
-
     const newLetter = {
         id: 'letter_' + now + '_' + Math.random().toString(36).substr(2, 6),
         content: content,
