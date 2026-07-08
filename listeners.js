@@ -11,6 +11,25 @@ function setupEventListeners() {
                 else modal.style.display = 'flex';
             }
         });
+        // 修复信封投递寄信按钮
+setTimeout(function() {
+    var sendBtn = document.getElementById('send-envelope');
+    if (sendBtn && !sendBtn._envFixed) {
+        sendBtn._envFixed = true;
+        sendBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            // 确保表单可见
+            var form = document.getElementById('env-compose-form');
+            if (form && form.style.display === 'none') {
+                form.style.display = 'block';
+            }
+            if (typeof handleSendEnvelope === 'function') {
+                handleSendEnvelope();
+            }
+        });
+    }
+}, 1000);
     }
 
     // 主题切换
