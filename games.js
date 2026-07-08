@@ -962,20 +962,7 @@ function initDecisionModule() {
             hideModal(document.getElementById('advanced-modal'));
             showModal(document.getElementById('decision-menu-modal'));
         });
-                // 确保发送结果按钮能正常工作
-var sendCoinBtn = document.getElementById('send-coin-result');
-if (sendCoinBtn && !sendCoinBtn._coinSendBound) {
-    sendCoinBtn._coinSendBound = true;
-    sendCoinBtn.addEventListener('click', function() {
-        if (typeof lastCoinResult !== 'undefined' && lastCoinResult) {
-            if (typeof sendMessage === 'function') {
-                sendMessage('🪙 抛硬币结果：' + lastCoinResult, 'normal');
-            }
-            var overlay = document.getElementById('coin-toss-overlay');
-            if (overlay) overlay.classList.remove('visible');
-        }
-    });
-}
+
     }
 
     const openCoinBtn = document.getElementById('open-coin-toss');
@@ -1041,6 +1028,20 @@ if (sendCoinBtn && !sendCoinBtn._coinSendBound) {
         });
         sendResultBtn.dataset.initialized = 'true';
     }
+            // 确保发送结果按钮能正常工作
+var sendCoinBtn = document.getElementById('send-coin-result');
+if (sendCoinBtn && !sendCoinBtn._coinSendBound) {
+    sendCoinBtn._coinSendBound = true;
+    sendCoinBtn.addEventListener('click', function() {
+        if (typeof lastCoinResult !== 'undefined' && lastCoinResult) {
+            if (typeof sendMessage === 'function') {
+                sendMessage('🪙 抛硬币结果：' + lastCoinResult, 'normal');
+            }
+            var overlay = document.getElementById('coin-toss-overlay');
+            if (overlay) overlay.classList.remove('visible');
+        }
+    });
+}
 }
 
 function initPicker() {
@@ -1181,8 +1182,8 @@ function handleCoinToss() {
     overlay.classList.add('visible');
     const resultText = DOMElements.coinResultText;
     if (resultText) resultText.textContent = '';
-    const sendBtn = DOMElements.sendCoinResult;
-    if (sendBtn) sendBtn.style.display = 'none';
+    const sendBtn = document.getElementById('send-coin-result');
+if (sendBtn) sendBtn.style.display = 'none';
     const retryBtn = document.getElementById('retry-coin-toss');
     if (retryBtn) retryBtn.style.display = 'none';
     if (DOMElements.animatedCoin) DOMElements.animatedCoin.style.transform = '';
