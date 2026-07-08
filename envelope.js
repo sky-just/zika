@@ -77,47 +77,6 @@ function showEnvelopeReplyPopup(letter) {
     setTimeout(() => { if (popup.parentNode) popup.remove(); }, 8000);
 }
 
-// ========== 外观设置面板辅助函数 ==========
-const APPEARANCE_PANEL_TITLES = {
-    'theme': '主题配色', 'font': '字体设置', 'background': '聊天背景',
-    'bubble': '气泡样式', 'avatar': '聊天头像', 'css': '自定义CSS',
-    'font-bg': '背景 & 字体', 'bubble-css': '气泡 & CSS'
-};
-window.showAppearancePanel = function(panel) {
-    const panelMap = {
-        'font-bg': ['font', 'background'],
-        'bubble-css': ['bubble', 'css']
-    };
-    document.getElementById('appearance-nav-grid').style.display = 'none';
-    var unBtn = document.getElementById('update-notice-btn');
-    if (unBtn) unBtn.style.display = 'none';
-    var galleryBanner = document.getElementById('gallery-banner-entry');
-    if (galleryBanner) galleryBanner.style.display = 'none';
-    document.getElementById('appearance-panel-container').style.display = 'block';
-    document.getElementById('appearance-panel-title').textContent = APPEARANCE_PANEL_TITLES[panel] || panel;
-    document.querySelectorAll('.appearance-sub-panel').forEach(p => p.style.display = 'none');
-    if (panelMap[panel]) {
-        panelMap[panel].forEach(sub => {
-            const target = document.getElementById('appearance-panel-' + sub);
-            if (target) target.style.display = 'block';
-        });
-    } else {
-        const target = document.getElementById('appearance-panel-' + panel);
-        if (target) target.style.display = 'block';
-    }
-    if (panel === 'bubble' || panel === 'bubble-css') { setTimeout(() => { if (typeof window.updateBubblePreviewFn === 'function') window.updateBubblePreviewFn(); }, 50); }
-};
-window.hideAppearancePanel = function() {
-    document.getElementById('appearance-nav-grid').style.display = 'grid';
-    document.getElementById('appearance-panel-container').style.display = 'none';
-    document.querySelectorAll('.appearance-sub-panel').forEach(p => p.style.display = 'none');
-    var unBtn = document.getElementById('update-notice-btn');
-    if (unBtn) unBtn.style.display = 'flex';
-    var galleryBanner = document.getElementById('gallery-banner-entry');
-    if (galleryBanner) galleryBanner.style.display = 'flex';
-};
-
-// ========== 信封核心逻辑 ==========
 window.openEnvelopeAndViewReply = function(replyId) {
     const popup = document.getElementById('envelope-reply-popup');
     if (popup) popup.remove();
@@ -161,8 +120,6 @@ function renderEnvelopeLists() {
     const inboxBadge = document.getElementById('env-inbox-badge');
     if (outboxBadge) { outboxBadge.textContent = pendingCount; outboxBadge.style.display = pendingCount > 0 ? 'inline-block' : 'none'; }
     if (inboxBadge) { inboxBadge.textContent = newInboxCount; inboxBadge.style.display = newInboxCount > 0 ? 'inline-block' : 'none'; }
-    const envelopeEntryBadge = document.getElementById('env-entry-badge');
-    if (envelopeEntryBadge) { envelopeEntryBadge.style.display = newInboxCount > 0 ? 'inline-block' : 'none'; }
 }
 
 function renderOutboxList() {
@@ -212,25 +169,24 @@ window.viewEnvLetter = function(section, id) {
     editingEnvSection = section;
     document.getElementById('env-view-title').textContent = section === 'outbox' ? '寄出的信' : '收到的回信';
     const dateObj = letter.timestamp ? new Date(letter.timestamp) : new Date();
-    const y = dateObj.getFullYear();
     const mo = String(dateObj.getMonth()+1).padStart(2,'0');
     const d = String(dateObj.getDate()).padStart(2,'0');
-    const dateStr = `${y}/${mo}/${d}`;
+    const dateStr = dateObj.getFullYear() + '/' + mo + '/' + d;
     const weekdays = ['日','一','二','三','四','五','六'];
     const fullDateStr = dateStr + ' 星期' + weekdays[dateObj.getDay()];
     const stampEl = document.getElementById('env-view-stamp-date');
-    if (stampEl) stampEl.textContent = `${mo}/${d}`;
+    if (stampEl) stampEl.textContent = mo + '/' + d;
     const dateLine = document.getElementById('env-view-date-line');
     if (dateLine) dateLine.textContent = fullDateStr;
     const toLine = document.getElementById('env-view-to-line');
     const greetingLine = document.getElementById('env-view-greeting-line');
     if (section === 'outbox') {
         const partnerName = (typeof settings !== 'undefined' && settings.partnerName) || '亲爱的';
-        if (toLine) toLine.textContent = `致 ${partnerName}：`;
+        if (toLine) toLine.textContent = '致 ' + partnerName + '：';
         if (greetingLine) greetingLine.textContent = '见字如面，望君安好。';
     } else {
         const myName = (typeof settings !== 'undefined' && settings.myName) || '你';
-        if (toLine) toLine.textContent = `致 ${myName}：`;
+        if (toLine) toLine.textContent = '致 ' + myName + '：';
         if (greetingLine) greetingLine.textContent = '见字如面，一切皆好。';
     }
     const textEl = document.getElementById('env-view-text');
@@ -320,53 +276,88 @@ window.deleteEnvLetter = function(event, section, id) {
     showNotification('已删除', 'success');
 };
 
-
 window.openNewEnvelopeForm = function() {
-    var outbox = document.getElementById('env-outbox-section');
-    var inbox = document.getElementById('env-inbox-section');
-    var closeBtn = document.getElementById('env-main-close-btn');
-    var form = document.getElementById('env-compose-form');
-    var input = document.getElementById('envelope-input');
-    var title = document.getElementById('env-compose-title');
-    var checkbox = document.getElementById('env-send-to-chat');
-
-    if (outbox) outbox.style.display = 'none';
-    if (inbox) inbox.style.display = 'none';
-    if (closeBtn) closeBtn.style.display = 'none';
-    if (title) title.textContent = '写一封信';
-    if (input) input.value = '';
-    if (checkbox) checkbox.checked = false;
-    if (form) {
-        form.style.display = 'block';
-        form.style.visibility = 'visible';
-    }
+    document.getElementById('env-outbox-section').style.display = 'none';
+    document.getElementById('env-inbox-section').style.display = 'none';
+    document.getElementById('env-main-close-btn').style.display = 'none';
+    document.getElementById('env-compose-title').textContent = '写一封信';
+    document.getElementById('envelope-input').value = '';
+    document.getElementById('env-send-to-chat').checked = false;
+    document.getElementById('env-compose-form').style.display = 'block';
 };
-    const newLetter = {
-        id: 'letter_' + now + '_' + Math.random().toString(36).substr(2, 6),
-        content: content,
-        sentTime: now,
-        replyTime: now + (10 * 60 * 60 * 1000 + Math.random() * 14 * 60 * 60 * 1000),
-        status: 'pending',
-        isNew: true,
-        sendToChat: sendToChat
-    };
 
-    if (!window.envelopeData) window.envelopeData = { outbox: [], inbox: [] };
-    window.envelopeData.outbox.unshift(newLetter);
-    
-    saveEnvelopeData();
-    showNotification('信已寄出 ✨ 对方将在 10-24 小时内回信', 'success');
-    
+window.cancelEnvelopeCompose = function() {
     document.getElementById('env-compose-form').style.display = 'none';
     document.getElementById('env-main-close-btn').style.display = 'flex';
-    document.getElementById('env-outbox-section').style.display = 'block';
-    document.getElementById('env-inbox-section').style.display = 'none';
-    
-    if (input) input.value = '';
-    switchEnvTab('outbox');
+    if (currentEnvTab === 'outbox') {
+        document.getElementById('env-outbox-section').style.display = 'block';
+    } else {
+        document.getElementById('env-inbox-section').style.display = 'block';
+    }
 };
 
-// ========== 梦角主动写信 ==========
+window.handleSendEnvelope = function() {
+    if (typeof addMessage !== 'function') {
+        if (typeof showNotification === 'function') showNotification('核心功能加载中，请稍后重试', 'error');
+        return;
+    }
+    if (typeof showNotification !== 'function') {
+        alert('错误：核心通知功能未加载，请刷新页面');
+        return;
+    }
+
+    const input = document.getElementById('envelope-input');
+    const content = input ? input.value.trim() : '';
+    if (!content) {
+        showNotification('信件内容不能为空', 'warning');
+        return;
+    }
+
+    const sendToChat = document.getElementById('env-send-to-chat');
+    const shouldSendToChat = sendToChat ? sendToChat.checked : false;
+    const now = Date.now();
+
+    try {
+        if (shouldSendToChat && typeof addMessage === 'function') {
+            addMessage({
+                id: now,
+                sender: 'user',
+                text: '📨 寄出了一封信：\n' + content,
+                timestamp: new Date(),
+                status: 'sent',
+                type: 'normal'
+            });
+            if (typeof playSound === 'function') playSound('send');
+        }
+    } catch(e) {}
+
+    try {
+        if (typeof envelopeData === 'undefined') {
+            window.envelopeData = { outbox: [], inbox: [] };
+        }
+        window.envelopeData.outbox.unshift({
+            id: 'letter_' + now + '_' + Math.random().toString(36).substr(2, 6),
+            content: content,
+            sentTime: now,
+            replyTime: now + (10 * 60 * 60 * 1000 + Math.random() * 14 * 60 * 60 * 1000),
+            status: 'pending',
+            isNew: true,
+            sendToChat: shouldSendToChat
+        });
+        if (typeof saveEnvelopeData === 'function') saveEnvelopeData();
+        
+        document.getElementById('env-compose-form').style.display = 'none';
+        document.getElementById('env-main-close-btn').style.display = 'flex';
+        document.getElementById('env-outbox-section').style.display = 'block';
+        if (input) input.value = '';
+        if (typeof switchEnvTab === 'function') switchEnvTab('outbox');
+        if (typeof renderEnvelopeLists === 'function') renderEnvelopeLists();
+        showNotification('信已寄出 ✨ 对方将在 10-24 小时内回信', 'success');
+    } catch(e) {
+        showNotification('寄信失败，请重试', 'error');
+    }
+};
+
 function generatePartnerLetterContent() {
     var pool = (customReplies && customReplies.length > 0) ? customReplies : CONSTANTS.REPLY_MESSAGES;
     var count = Math.floor(Math.random() * 21) + 5;
@@ -420,4 +411,4 @@ if (!window._letterOversightStarted) {
     window._letterOversightStarted = true;
     startLetterOversight();
     scheduleRandomLetter();
-}   
+}
