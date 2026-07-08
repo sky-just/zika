@@ -395,30 +395,70 @@ window.cancelEnvelopeCompose = function() {
 };
 
 function handleSendEnvelope() {
-    const text = document.getElementById('envelope-input').value.trim();
-    if (!text) { showNotification('信件内容不能为空', 'warning'); return; }
-
-    const sendToChat = document.getElementById('env-send-to-chat').checked;
-    if (sendToChat) {
-        addMessage({ id: Date.now(), sender: 'user', text: `【寄出的信】\n${text}`, timestamp: new Date(), status: 'sent', type: 'normal' });
+    // 检查依赖函数是否存在
+    if (typeof addMessage !== 'function') {
+        alert('错误：核心函数 addMessage 未加载，请刷新页面后重试');
+        return;
+    }
+    if (typeof showNotification !== 'function') {
+        alert('错误：核心函数 showNotification 未加载，请刷新页面后重试');
+        return;
     }
 
-    const minHours = 10, maxHours = 24;
-    const randomHours = Math.random() * (maxHours - minHours) + minHours;
-    const replyTime = Date.now() + randomHours * 60 * 60 * 1000;
-    const newId = 'env_' + Date.now() + '_' + Math.random().toString(36).substr(2,4);
+    var input = document.getElementById('envelope-input');
+    if (!input) return;
+    var text = input.value.trim();
+    if (!text) {
+        showNotification('信件内容不能为空', 'warning');
+        return;
+    }
+
+    var sendToChat = document.getElementById('env-send-to-chat');
+    var shouldSendToChat = sendToChat ? sendToChat.checked : false;
+
+    if (shouldSendToChat) {
+        addMessage({
+            id: Date.now(),
+            sender: 'user',
+            text: '【寄出的信】\n' + text,
+            timestamp: new Date(),
+            status: 'sent',
+            type: 'normal'
+        });
+    }
+
+    var minHours = 10, maxHours = 24;
+    var randomHours = Math.random() * (maxHours - minHours) + minHours;
+    var replyTime = Date.now() + randomHours * 60 * 60 * 1000;
+    var newId = 'env_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+
+    if (typeof envelopeData === 'undefined') {
+        window.envelopeData = { outbox: [], inbox: [] };
+    }
     envelopeData.outbox.push({
-        id: newId, content: text,
-        sentTime: Date.now(), replyTime,
+        id: newId,
+        content: text,
+        sentTime: Date.now(),
+        replyTime: replyTime,
         status: 'pending'
     });
-    saveEnvelopeData();
 
-    cancelEnvelopeCompose();
-    switchEnvTab('outbox');
-    showNotification(`信件已寄出，预计 ${Math.floor(randomHours)} 小时后收到回信 ✉️`, 'success');
+    if (typeof saveEnvelopeData === 'function') {
+        saveEnvelopeData();
+    }
+
+    if (typeof cancelEnvelopeCompose === 'function') {
+        cancelEnvelopeCompose();
+    }
+    if (typeof switchEnvTab === 'function') {
+        switchEnvTab('outbox');
+    }
+    if (typeof renderEnvelopeLists === 'function') {
+        renderEnvelopeLists();
+    }
+
+    showNotification('信件已寄出，预计 ' + Math.floor(randomHours) + ' 小时后收到回信 ✉️', 'success');
 }
-
 // ========== 梦角主动写信 ==========
 function generatePartnerLetterContent() {
     var pool = (customReplies && customReplies.length > 0) ? customReplies : CONSTANTS.REPLY_MESSAGES;
