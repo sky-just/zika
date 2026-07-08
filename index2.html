@@ -2301,6 +2301,38 @@ window.addEventListener('error', function(e) {
     }
 })();
   </script>
-
+<script>
+(function() {
+    setTimeout(function() {
+        var btn = document.getElementById('send-envelope');
+        if (!btn) {
+            alert('❌ 找不到寄信按钮 #send-envelope');
+            return;
+        }
+        
+        // 检查当前绑定状态
+        var hasOnclick = btn.getAttribute('onclick');
+        alert('寄信按钮状态:\n' +
+              'onclick属性: ' + (hasOnclick || '无') + '\n' +
+              'handleSendEnvelope类型: ' + (typeof handleSendEnvelope) + '\n' +
+              '按钮可见: ' + (btn.offsetParent !== null));
+        
+        // 直接绑定事件（绕过 onclick 属性）
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            alert('按钮被点击了！开始调用 handleSendEnvelope');
+            if (typeof handleSendEnvelope === 'function') {
+                handleSendEnvelope();
+                alert('handleSendEnvelope 调用完成');
+            } else {
+                alert('❌ handleSendEnvelope 不是函数');
+            }
+        });
+        
+        alert('✅ 诊断脚本已就绪，请打开信封投递弹窗并点寄信按钮');
+    }, 2000);
+})();
+</script>
 </body>
 </html>
