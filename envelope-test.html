@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>信封投递独立测试</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #1a1a2e; color: #eee; }
+        button { padding: 12px 20px; margin: 8px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .primary { background: #e94560; color: white; }
+        .secondary { background: #16213e; color: #eee; border: 1px solid #444; }
+        textarea { width: 100%; height: 120px; margin: 10px 0; padding: 10px; background: #0f0f1a; color: #eee; border: 1px solid #444; border-radius: 8px; font-size: 14px; }
+        #log { background: #0f0f1a; padding: 12px; border-radius: 8px; margin-top: 12px; font-size: 12px; white-space: pre-wrap; max-height: 200px; overflow-y: auto; }
+        .log-info { color: #6BCB77; }
+        .log-error { color: #ff6b6b; }
+        .log-warn { color: #FFD93D; }
+    </style>
+</head>
+<body>
+    <h2>📨 信封投递 - 独立功能测试</h2>
+    <p>这个页面完全独立，不依赖你的其他文件。用于验证信封核心逻辑是否正常。</p>
+    
+    <textarea id="test-input" placeholder="在这里写一封信..."></textarea>
+    
+    <button class="primary" onclick="testSend()">📨 寄出信件</button>
+    <button class="secondary" onclick="testViewOutbox()">📤 查看寄出的信</button>
+    <button class="secondary" onclick="testViewInbox()">📥 查看收到的信</button>
+    <button class="secondary" onclick="testSimulateReply()">🤖 模拟对方回信</button>
+    <button class="secondary" onclick="testClear()">🗑 清空数据</button>
+    
+    <div id="log"></div>
+
+    <script>
+        var APP_PREFIX = 'CHAT_APP_V3_';
+        var SESSION_ID = 'test_session';
+        
+        function getStorageKey(key) {
+            return APP_PREFIX + SESSION_ID + '_' + key;
+        }
+        
+        function log(msg, type) {
+            var el = document.getElementById('log');
+            var cls = type === 'error' ? 'log-error' : (type === 'warn' ? 'log-warn' : 'log-info');
+            el.innerHTML += '<span class="' + cls + '">[' + new Date().toLocaleTimeString() + '] ' + msg + '</span>\n';
+            el.scrollTop = el.scrollHeight;
+        }
+        
+        function getData() {
+            return localforage.getItem(getStorageKey('envelopeData')).then(function(data) {
+                return data || { outbox: [], inbox: [] };
+            });
+        }
+        
+        function saveData(data) {
+            return localforage.setItem(getStorageKey('envelopeData'), data);
+        }
+        
+        function testSend() {
+            var input = document.getElementById('test-input');
+            var content = input.value.trim();
+            
+            if (!content) {
+                log('❌ 内容不能为空', 'warn');
+                return;
+            }
+            
+            log('📝 开始寄信...', 'info');
+            
+            getData().then(function(data) {
+                var letter = {
+                    id: 'test_' + Date.now(),
+                    content: content,
+                    sentTime: Date.now(),
+                    status: 'pending'
+                };
+                data.outbox.push(letter);
+                
+                return saveData(data);
+            }).then(function() {
+                log('✅ 信件已保存到本地存储！', 'info');
+                log('📤 寄出的信共: 查看下方按钮', 'info');
+                input.value = '';
+            }).catch(function(err) {
+                log('❌ 寄信失败: ' + err.message, 'error');
+            });
+        }
+        
+        function testViewOutbox() {
+            log('📤 读取寄出的信...', 'info');
+            getData().then(function(data) {
+                if (data.outbox.length === 0) {
+                    log('📭 暂无寄出的信', 'info');
+                } else {
+                    log('📤 共 ' + data.outbox.length + ' 封寄出的信:', 'info');
+                    data.outbox.forEach(function(letter, i) {
+                        var preview = letter.content.substring(0, 40);
+                        log('  #' + (i+1) + ': ' + preview + '...', 'info');
+                    });
+                }
+            }).catch(function(err) {
+                log('❌ 读取失败: ' + err.message, 'error');
+            });
+        }
+        
+        function testViewInbox() {
+            log('📥 读取收到的信...', 'info');
+            getData().then(function(data) {
+                if (!data.inbox || data.inbox.length === 0) {
+                    log('📭 暂无收到的信', 'info');
+                } else {
+                    log('📥 共 ' + data.inbox.length + ' 封收到的信:', 'info');
+                    data.inbox.forEach(function(letter, i) {
+                        var preview = letter.content.substring(0, 40);
+                        log('  #' + (i+1) + ': ' + preview + '...', 'info');
+                    });
+                }
+            }).catch(function(err) {
+                log('❌ 读取失败: ' + err.message, 'error');
+            });
+        }
+        
+        function testSimulateReply() {
+            log('🤖 模拟对方回信...', 'info');
+            getData().then(function(data) {
+                var reply = {
+                    id: 'reply_' + Date.now(),
+                    content: '这是一封自动生成的回信。你好吗？我在这里很好。',
+                    receivedTime: Date.now(),
+                    isNew: true
+                };
+                if (!data.inbox) data.inbox = [];
+                data.inbox.push(reply);
+                return saveData(data);
+            }).then(function() {
+                log('✅ 模拟回信已生成！', 'info');
+            }).catch(function(err) {
+                log('❌ 模拟回信失败: ' + err.message, 'error');
+            });
+        }
+        
+        function testClear() {
+            if (confirm('确定要清空所有测试数据吗？')) {
+                localforage.removeItem(getStorageKey('envelopeData')).then(function() {
+                    log('🗑 数据已清空', 'info');
+                });
+            }
+        }
+        
+        log('✅ 信封投递独立测试页已就绪', 'info');
+        log('💡 这个页面完全独立，不依赖你的其他文件', 'info');
+    </script>
+</body>
+</html>
