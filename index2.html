@@ -2287,197 +2287,169 @@ window.addEventListener('error', function(e) {
 
 <script>
 (function() {
-    // 彻底屏蔽旧的 handleSendEnvelope
-    Object.defineProperty(window, 'handleSendEnvelope', {
-        get: function() { return function() {}; },
-        set: function() {},
-        configurable: false
-    });
-
-    var envelopeModal = document.getElementById('envelope-modal');
-    if (!envelopeModal) return;
-
-    // 监听整个信封弹窗的 DOM 变化
-    var observer = new MutationObserver(function() {
-        bindAllButtons();
-    });
-
-    observer.observe(envelopeModal, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['style']
-    });
-
-    function bindAllButtons() {
-        // 寄信按钮
-        var sendBtn = document.getElementById('send-envelope');
-        if (sendBtn && !sendBtn._finalBound) {
-            sendBtn._finalBound = true;
-            sendBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-
-                var input = document.getElementById('envelope-input');
-                var text = input ? input.value.trim() : '';
-                
-                if (!text) {
-                    alert('信件内容不能为空');
-                    return false;
-                }
-
-                // 初始化数据
-                if (!window._envData) {
-                    window._envData = { outbox: [], inbox: [] };
-                }
-
-                // 添加信件
-                window._envData.outbox.unshift({
-                    id: 'env_' + Date.now(),
-                    content: text,
-                    sentTime: Date.now(),
-                    status: 'pending'
-                });
-
-                // 保存到存储
-                if (typeof localforage !== 'undefined' && typeof getStorageKey === 'function') {
-                    localforage.setItem(getStorageKey('envelopeData'), window._envData).catch(function(){});
-                }
-
-                // 关闭表单
-                var form = document.getElementById('env-compose-form');
-                var outbox = document.getElementById('env-outbox-section');
-                var inbox = document.getElementById('env-inbox-section');
-                var closeBtn = document.getElementById('env-main-close-btn');
-
-                if (form) form.style.display = 'none';
-                if (closeBtn) closeBtn.style.display = 'flex';
-                if (outbox) outbox.style.display = 'block';
-                if (inbox) inbox.style.display = 'none';
-                if (input) input.value = '';
-
-                // 刷新列表
-                renderFinalLists();
-                alert('信已寄出！');
-                return false;
-            }, true);
+    setTimeout(function() {
+        // 禁用旧的 handleSendEnvelope
+        var oldSendBtn = document.getElementById('send-envelope');
+        if (oldSendBtn) {
+            oldSendBtn.removeAttribute('onclick');
         }
 
-        // 提笔写信按钮
-        var newBtn = document.getElementById('new-envelope-btn');
-        if (newBtn && !newBtn._finalBound) {
-            newBtn._finalBound = true;
-            newBtn.addEventListener('click', function(e) {
+        // 寄信逻辑
+        function doSend() {
+            var input = document.getElementById('envelope-input');
+            var text = input ? input.value.trim() : '';
+            
+            if (!text) {
+                alert('请先写下你的思念...');
+                return;
+            }
+
+            // 获取或创建数据
+            var data = window._envData;
+            if (!data || !data.outbox) {
+                data = { outbox: [], inbox: [] };
+                window._envData = data;
+            }
+
+            // 添加信件
+            data.outbox.unshift({
+                id: 'env_' + Date.now(),
+                content: text,
+                sentTime: Date.now(),
+                status: 'pending'
+            });
+
+            // 保存
+            if (typeof localforage !== 'undefined' && typeof getStorageKey === 'function') {
+                localforage.setItem(getStorageKey('envelopeData'), data).catch(function(){});
+            }
+
+            // 关闭表单，显示列表
+            var form = document.getElementById('env-compose-form');
+            var closeBtn = document.getElementById('env-main-close-btn');
+            var outbox = document.getElementById('env-outbox-section');
+            var inbox = document.getElementById('env-inbox-section');
+
+            if (form) form.style.display = 'none';
+            if (closeBtn) closeBtn.style.display = 'flex';
+            if (outbox) outbox.style.display = 'block';
+            if (inbox) inbox.style.display = 'none';
+            if (input) input.value = '';
+
+            // 刷新列表
+            renderLists(data);
+            alert('信已寄出！');
+        }
+
+        // 渲染列表
+        function renderLists(data) {
+            data = data || window._envData || { outbox: [], inbox: [] };
+            
+            var outboxList = document.getElementById('env-outbox-list');
+            if (outboxList) {
+                var outbox = data.outbox || [];
+                if (outbox.length === 0) {
+                    outboxList.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-secondary);">还没有寄出任何信件</div>';
+                } else {
+                    outboxList.innerHTML = outbox.slice().reverse().map(function(letter) {
+                        var date = new Date(letter.sentTime).toLocaleString('zh-CN');
+                        var preview = (letter.content || '').substring(0, 30);
+                        return '<div style="padding:6px 10px;border-bottom:1px solid var(--border-color);font-size:13px;">' +
+                               '📤 ' + date + ' - ' + preview + '</div>';
+                    }).join('');
+                }
+            }
+
+            var inboxList = document.getElementById('env-inbox-list');
+            if (inboxList) {
+                var inbox = data.inbox || [];
+                if (inbox.length === 0) {
+                    inboxList.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-secondary);">还没有收到回信</div>';
+                } else {
+                    inboxList.innerHTML = inbox.slice().reverse().map(function(letter) {
+                        var date = new Date(letter.receivedTime).toLocaleString('zh-CN');
+                        var preview = (letter.content || '').substring(0, 30);
+                        return '<div style="padding:6px 10px;border-bottom:1px solid var(--border-color);font-size:13px;">' +
+                               '📥 ' + date + ' - ' + preview + '</div>';
+                    }).join('');
+                }
+            }
+        }
+
+        // 加载数据并渲染
+        function loadAndRender() {
+            if (typeof localforage !== 'undefined' && typeof getStorageKey === 'function') {
+                localforage.getItem(getStorageKey('envelopeData')).then(function(data) {
+                    window._envData = data || { outbox: [], inbox: [] };
+                    renderLists(window._envData);
+                }).catch(function() {
+                    window._envData = { outbox: [], inbox: [] };
+                    renderLists(window._envData);
+                });
+            } else {
+                window._envData = window._envData || { outbox: [], inbox: [] };
+                renderLists(window._envData);
+            }
+        }
+
+        // 绑定按钮事件
+        var sendBtn = document.getElementById('send-envelope');
+        if (sendBtn) {
+            sendBtn.onclick = function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                
+                doSend();
+                return false;
+            };
+        }
+
+        var newBtn = document.getElementById('new-envelope-btn');
+        if (newBtn) {
+            newBtn.onclick = function(e) {
+                e.stopPropagation();
                 document.getElementById('env-outbox-section').style.display = 'none';
                 document.getElementById('env-inbox-section').style.display = 'none';
                 document.getElementById('env-main-close-btn').style.display = 'none';
-                
                 var form = document.getElementById('env-compose-form');
                 form.style.display = 'block';
                 form.style.visibility = 'visible';
                 document.getElementById('envelope-input').value = '';
-            }, true);
+            };
         }
 
-        // 取消按钮
         var cancelBtn = document.getElementById('cancel-compose');
-        if (cancelBtn && !cancelBtn._finalBound) {
-            cancelBtn._finalBound = true;
-            cancelBtn.addEventListener('click', function(e) {
-                e.preventDefault();
+        if (cancelBtn) {
+            cancelBtn.onclick = function(e) {
                 e.stopPropagation();
-                
                 document.getElementById('env-compose-form').style.display = 'none';
                 document.getElementById('env-main-close-btn').style.display = 'flex';
                 document.getElementById('env-outbox-section').style.display = 'block';
-            }, true);
+            };
         }
 
-        // 标签切换
         var outboxTab = document.getElementById('env-tab-outbox');
         var inboxTab = document.getElementById('env-tab-inbox');
-        if (outboxTab && !outboxTab._finalBound) {
-            outboxTab._finalBound = true;
-            outboxTab.addEventListener('click', function() {
-                document.getElementById('env-outbox-section').style.display = 'block';
-                document.getElementById('env-inbox-section').style.display = 'none';
-                document.getElementById('env-compose-form').style.display = 'none';
-                document.getElementById('env-main-close-btn').style.display = 'flex';
-                loadAndRenderFinal();
-            }, true);
-        }
-        if (inboxTab && !inboxTab._finalBound) {
-            inboxTab._finalBound = true;
-            inboxTab.addEventListener('click', function() {
-                document.getElementById('env-outbox-section').style.display = 'none';
-                document.getElementById('env-inbox-section').style.display = 'block';
-                document.getElementById('env-compose-form').style.display = 'none';
-                document.getElementById('env-main-close-btn').style.display = 'flex';
-                loadAndRenderFinal();
-            }, true);
-        }
-    }
+        if (outboxTab) outboxTab.onclick = function() {
+            document.getElementById('env-outbox-section').style.display = 'block';
+            document.getElementById('env-inbox-section').style.display = 'none';
+            document.getElementById('env-compose-form').style.display = 'none';
+            document.getElementById('env-main-close-btn').style.display = 'flex';
+            loadAndRender();
+        };
+        if (inboxTab) inboxTab.onclick = function() {
+            document.getElementById('env-outbox-section').style.display = 'none';
+            document.getElementById('env-inbox-section').style.display = 'block';
+            document.getElementById('env-compose-form').style.display = 'none';
+            document.getElementById('env-main-close-btn').style.display = 'flex';
+            loadAndRender();
+        };
 
-    function loadAndRenderFinal() {
-        if (typeof localforage !== 'undefined' && typeof getStorageKey === 'function') {
-            localforage.getItem(getStorageKey('envelopeData')).then(function(data) {
-                window._envData = data || { outbox: [], inbox: [] };
-                renderFinalLists();
-            }).catch(function() {
-                window._envData = { outbox: [], inbox: [] };
-                renderFinalLists();
-            });
-        } else {
-            window._envData = window._envData || { outbox: [], inbox: [] };
-            renderFinalLists();
-        }
-    }
-
-    function renderFinalLists() {
-        var data = window._envData || { outbox: [], inbox: [] };
+        // 初始加载
+        loadAndRender();
         
-        var outboxList = document.getElementById('env-outbox-list');
-        if (outboxList) {
-            if (!data.outbox || data.outbox.length === 0) {
-                outboxList.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-secondary);">还没有寄出任何信件</div>';
-            } else {
-                outboxList.innerHTML = data.outbox.slice().reverse().map(function(letter) {
-                    var date = new Date(letter.sentTime).toLocaleString('zh-CN');
-                    var preview = (letter.content || '').substring(0, 35);
-                    return '<div style="padding:8px 12px;border-bottom:1px solid var(--border-color);">' +
-                           '<b>📤 ' + date + '</b><br>' +
-                           '<span style="color:var(--text-secondary);font-size:13px;">' + preview + '...</span></div>';
-                }).join('');
-            }
-        }
-
-        var inboxList = document.getElementById('env-inbox-list');
-        if (inboxList) {
-            if (!data.inbox || data.inbox.length === 0) {
-                inboxList.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-secondary);">还没有收到回信</div>';
-            } else {
-                inboxList.innerHTML = data.inbox.slice().reverse().map(function(letter) {
-                    var date = new Date(letter.receivedTime).toLocaleString('zh-CN');
-                    var preview = (letter.content || '').substring(0, 35);
-                    return '<div style="padding:8px 12px;border-bottom:1px solid var(--border-color);">' +
-                           '<b>📥 ' + date + '</b><br>' +
-                           '<span style="color:var(--text-secondary);font-size:13px;">' + preview + '...</span></div>';
-                }).join('');
-            }
-        }
-    }
-
-    // 初始加载
-    setTimeout(loadAndRenderFinal, 2000);
-    console.log('✅ 信封投递 MutationObserver 版本已激活');
+    }, 2000);
 })();
 </script>
-
-
 
 </body>
 </html>
