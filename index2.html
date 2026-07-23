@@ -2334,5 +2334,182 @@ window.addEventListener('error', function(e) {
     }, 2000);
 })();
 </script>
+        <script>
+(function() {
+    // 等待页面核心功能（如 showModal, localforage）加载完成
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            
+            // ========== 信封投递独立修复模块 ==========
+            console.log('[信封修复] 开始接管信封投递功能...');
+
+            // 1. 确保信封数据存在
+            if (typeof window.envelopeData === 'undefined') {
+                window.envelopeData = { outbox: [], inbox: [] };
+            }
+
+            // 2. 核心函数：保存数据
+            var saveData = function() {
+                if (typeof localforage !== 'undefined' && typeof getStorageKey === 'function') {
+                    localforage.setItem(getStorageKey('envelopeData'), window.envelopeData).catch(function(){});
+                }
+            };
+
+            // 3. 核心函数：渲染信件列表
+            var renderLists = function() {
+                // 渲染寄出的信
+                var outboxList = document.getElementById('env-outbox-list');
+                if (outboxList) {
+                    var outbox = window.envelopeData.outbox || [];
+                    outboxList.innerHTML = outbox.slice().reverse().map(function(letter) {
+                        var date = new Date(letter.sentTime).toLocaleString('zh-CN');
+                        var isPending = letter.status === 'pending';
+                        var icon = isPending ? '⏳' : '✅';
+                        var status = isPending ? '等待回信' : '已回信';
+                        var preview = letter.content.substring(0, 30) + (letter.content.length > 30 ? '...' : '');
+                        return '<div style="padding:8px; border-bottom:1px solid var(--border-color); cursor:pointer;" onclick="alert(\'信件内容：\\n\\n' + letter.content.replace(/"/g, '&quot;') + '\')">' +
+                               '<b>' + icon + ' ' + status + '</b><br>' +
+                               '<small>' + date + '</small><br>' +
+                               preview + '</div>';
+                    }).join('') || '<div style="padding:20px;text-align:center;color:var(--text-secondary);">暂无寄出的信</div>';
+                }
+
+                // 渲染收到的信
+                var inboxList = document.getElementById('env-inbox-list');
+                if (inboxList) {
+                    var inbox = window.envelopeData.inbox || [];
+                    inboxList.innerHTML = inbox.slice().reverse().map(function(letter) {
+                        var date = new Date(letter.receivedTime).toLocaleString('zh-CN');
+                        var isNew = letter.isNew;
+                        var newBadge = isNew ? ' <span style="background:red;color:white;font-size:10px;padding:1px 4px;border-radius:4px;">新</span>' : '';
+                        var preview = letter.content.substring(0, 30) + (letter.content.length > 30 ? '...' : '');
+                        return '<div style="padding:8px; border-bottom:1px solid var(--border-color); cursor:pointer;" onclick="alert(\'信件内容：\\n\\n' + letter.content.replace(/"/g, '&quot;') + '\')">' +
+                               '<b>📨 收到回信' + newBadge + '</b><br>' +
+                               '<small>' + date + '</small><br>' +
+                               preview + '</div>';
+                    }).join('') || '<div style="padding:20px;text-align:center;color:var(--text-secondary);">暂无收到的信</div>';
+                }
+            };
+
+            // 4. 修复“提笔写信”按钮
+            var newBtn = document.getElementById('new-envelope-btn');
+            if (newBtn) {
+                newBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    console.log('[信封修复] 打开写信界面');
+                    document.getElementById('env-outbox-section').style.display = 'none';
+                    document.getElementById('env-inbox-section').style.display = 'none';
+                    document.getElementById('env-main-close-btn').style.display = 'none';
+                    var form = document.getElementById('env-compose-form');
+                    form.style.display = 'block';
+                    form.style.visibility = 'visible';
+                    document.getElementById('envelope-input').value = '';
+                    document.getElementById('env-compose-title').textContent = '写一封信';
+                    var checkbox = document.getElementById('env-send-to-chat');
+                    if (checkbox) checkbox.checked = false;
+                };
+                console.log('[信封修复] 提笔写信按钮已修复');
+            }
+
+            // 5. 修复“寄出”按钮（核心修复）
+            var sendBtn = document.getElementById('send-envelope');
+            if (sendBtn) {
+                sendBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    console.log('[信封修复] 发送信件');
+                    
+                    var input = document.getElementById('envelope-input');
+                    var content = input ? input.value.trim() : '';
+                    
+                    if (!content) {
+                        if (typeof showNotification === 'function') showNotification('信件内容不能为空', 'warning');
+                        return;
+                    }
+
+                    // 发送逻辑
+                    try {
+                        var now = Date.now();
+                        
+                        // 可选：发送到聊天
+                        var sendToChat = document.getElementById('env-send-to-chat');
+                        if (sendToChat && sendToChat.checked && typeof addMessage === 'function') {
+                            addMessage({
+                                id: now,
+                                sender: 'user',
+                                text: '📨 寄出了一封信：\n' + content,
+                                timestamp: new Date(),
+                                status: 'sent',
+                                type: 'normal'
+                            });
+                            if (typeof playSound === 'function') playSound('send');
+                        }
+
+                        // 保存到数据
+                        window.envelopeData.outbox.unshift({
+                            id: 'env_' + now,
+                            content: content,
+                            sentTime: now,
+                            replyTime: now + (10 * 60 * 60 * 1000), // 10小时后回信
+                            status: 'pending'
+                        });
+                        saveData();
+
+                        // 界面切换
+                        document.getElementById('env-compose-form').style.display = 'none';
+                        document.getElementById('env-main-close-btn').style.display = 'flex';
+                        document.getElementById('env-outbox-section').style.display = 'block';
+                        document.getElementById('envelope-input').value = '';
+                        
+                        // 刷新列表
+                        renderLists();
+                        
+                        if (typeof showNotification === 'function') showNotification('信已寄出 ✨', 'success');
+                        console.log('[信封修复] 信件发送成功');
+                    } catch (err) {
+                        console.error('[信封修复] 发送失败:', err);
+                        if (typeof showNotification === 'function') showNotification('寄信失败，请重试', 'error');
+                    }
+                };
+                console.log('[信封修复] 寄出按钮已修复');
+            }
+
+            // 6. 修复标签切换
+            var outboxTab = document.getElementById('env-tab-outbox');
+            var inboxTab = document.getElementById('env-tab-inbox');
+            if (outboxTab) outboxTab.onclick = function() {
+                document.getElementById('env-outbox-section').style.display = 'block';
+                document.getElementById('env-inbox-section').style.display = 'none';
+                document.getElementById('env-compose-form').style.display = 'none';
+                renderLists();
+            };
+            if (inboxTab) inboxTab.onclick = function() {
+                document.getElementById('env-outbox-section').style.display = 'none';
+                document.getElementById('env-inbox-section').style.display = 'block';
+                document.getElementById('env-compose-form').style.display = 'none';
+                renderLists();
+            };
+
+            // 7. 修复“取消”和“关闭”按钮
+            var cancelBtn = document.getElementById('cancel-compose');
+            if (cancelBtn) cancelBtn.onclick = function() {
+                document.getElementById('env-compose-form').style.display = 'none';
+                document.getElementById('env-main-close-btn').style.display = 'flex';
+                document.getElementById('env-outbox-section').style.display = 'block';
+            };
+            var closeBtn = document.getElementById('cancel-envelope');
+            if (closeBtn) closeBtn.onclick = function() {
+                var modal = document.getElementById('envelope-modal');
+                if (modal && typeof hideModal === 'function') hideModal(modal);
+            };
+
+            // 初始渲染列表
+            renderLists();
+
+            console.log('[信封修复] 所有功能修复完成！');
+            
+        }, 2000); // 延迟2秒，确保所有核心JS加载
+    });
+})();
+        </script>
 </body>
 </html>
