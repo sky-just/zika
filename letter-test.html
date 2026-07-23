@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>信封功能独立验证</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #1a1a2e; color: #eee; }
+        button { padding: 12px 20px; margin: 8px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .primary { background: #e94560; color: white; }
+        .secondary { background: #16213e; color: #eee; border: 1px solid #444; }
+        textarea { width: 100%; height: 120px; margin: 10px 0; padding: 10px; background: #0f0f1a; color: #eee; border: 1px solid #444; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+        #log { background: #0f0f1a; padding: 12px; border-radius: 8px; margin-top: 12px; font-size: 12px; white-space: pre-wrap; max-height: 200px; overflow-y: auto; }
+        .log-info { color: #6BCB77; }
+        .log-error { color: #ff6b6b; }
+        .log-warn { color: #FFD93D; }
+    </style>
+</head>
+<body>
+    <h2>📨 信封投递 - 独立功能验证</h2>
+    <p>此页面完全不依赖你的其他文件，仅测试核心存储与逻辑。</p>
+    
+    <textarea id="letter-input" placeholder="在这里写一封信..."></textarea>
+    
+    <button class="primary" onclick="sendLetter()">📨 寄出信件</button>
+    <button class="secondary" onclick="viewLetters()">📤 查看所有寄出的信</button>
+    <button class="secondary" onclick="clearLetters()">🗑 清空数据</button>
+    
+    <div id="log"></div>
+
+    <script>
+        var STORAGE_KEY = 'envelopeTest_v1';
+
+        function log(msg, type) {
+            var el = document.getElementById('log');
+            var cls = type === 'error' ? 'log-error' : (type === 'warn' ? 'log-warn' : 'log-info');
+            el.innerHTML += '<span class="' + cls + '">[' + new Date().toLocaleTimeString() + '] ' + msg + '</span>\n';
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function sendLetter() {
+            var input = document.getElementById('letter-input');
+            var content = input.value.trim();
+            
+            if (!content) {
+                log('❌ 信件内容不能为空', 'warn');
+                return;
+            }
+
+            log('📝 正在保存信件...', 'info');
+            
+            localforage.getItem(STORAGE_KEY).then(function(data) {
+                data = data || { outbox: [] };
+                data.outbox.unshift({
+                    id: 'test_' + Date.now(),
+                    content: content,
+                    sentTime: Date.now()
+                });
+                return localforage.setItem(STORAGE_KEY, data);
+            }).then(function() {
+                log('✅ 信件已成功保存到本地存储！', 'info');
+                document.getElementById('letter-input').value = '';
+            }).catch(function(err) {
+                log('❌ 保存失败: ' + err.message, 'error');
+            });
+        }
+
+        function viewLetters() {
+            log('📤 正在读取信件...', 'info');
+            localforage.getItem(STORAGE_KEY).then(function(data) {
+                if (!data || !data.outbox || data.outbox.length === 0) {
+                    log('📭 暂未寄出任何信件', 'info');
+                } else {
+                    log('✅ 共找到 ' + data.outbox.length + ' 封信件:', 'info');
+                    data.outbox.forEach(function(letter, i) {
+                        var preview = letter.content.substring(0, 40);
+                        log('  #' + (i+1) + ': ' + preview + '...', 'info');
+                    });
+                }
+            }).catch(function(err) {
+                log('❌ 读取失败: ' + err.message, 'error');
+            });
+        }
+
+        function clearLetters() {
+            if (confirm('确定要清空所有测试数据吗？')) {
+                localforage.removeItem(STORAGE_KEY).then(function() {
+                    log('🗑 数据已清空', 'info');
+                });
+            }
+        }
+
+        log('✅ 独立验证页面已就绪', 'info');
+        log('💡 此页面不依赖网站任何文件，仅测试 localforage 存储功能', 'info');
+    </script>
+</body>
+</html>
