@@ -1,11 +1,10 @@
-// envelope.js - 最终兼容版（与 core.js 接口对齐）
+// envelope.js - 最终稳定版（使用 onclick 属性绑定，兼容 core.js 接口）
 (function() {
     'use strict';
 
-    // 内部数据变量
-    var data = { outbox: [], inbox: [] };
+    // 全局数据变量（兼容 core.js）
+    window.envelopeData = window.envelopeData || { outbox: [], inbox: [] };
     var currentTab = 'outbox';
-    var eventsBound = false;
 
     // 安全获取元素
     function $(id) { return document.getElementById(id); }
@@ -15,93 +14,43 @@
     function show(id) { var el = $(id); if (el) { el.style.display = 'block'; el.style.visibility = 'visible'; } }
     function showFlex(id) { var el = $(id); if (el) el.style.display = 'flex'; }
 
-    // 存储键（优先使用 getStorageKey，确保与 core.js 一致）
+    // 存储键（与 core.js 一致）
     function storageKey() {
         if (typeof getStorageKey === 'function') return getStorageKey('envelopeData');
-        return 'CHAT_APP_V3_default_envelopeData';
+        return 'CHAT_APP_V3_envelopeData';
     }
 
-    // ===== 新增：兼容旧接口 loadEnvelopeData（供 core.js 调用） =====
+    // ===== 核心接口：加载数据 =====
     window.loadEnvelopeData = async function() {
         if (typeof localforage === 'undefined') return;
         try {
             var saved = await localforage.getItem(storageKey());
             if (saved && typeof saved === 'object') {
-                data = saved;
-                if (!Array.isArray(data.outbox)) data.outbox = [];
-                if (!Array.isArray(data.inbox)) data.inbox = [];
+                window.envelopeData = saved;
+                if (!Array.isArray(window.envelopeData.outbox)) window.envelopeData.outbox = [];
+                if (!Array.isArray(window.envelopeData.inbox)) window.envelopeData.inbox = [];
             }
         } catch(e) {
-            data = { outbox: [], inbox: [] };
+            window.envelopeData = { outbox: [], inbox: [] };
         }
-        // 同步到全局变量
-        window.envelopeData = data;
+        renderAll();
     };
 
-    // ===== 新增：兼容旧接口 saveEnvelopeData（供 core.js 调用） =====
+    // ===== 核心接口：保存数据 =====
     window.saveEnvelopeData = function() {
         if (typeof localforage === 'undefined') return;
-        localforage.setItem(storageKey(), data).catch(function(){});
-        // 同步到全局变量
-        window.envelopeData = data;
+        localforage.setItem(storageKey(), window.envelopeData).catch(function(){});
     };
 
-    // ===== 新增：兼容旧接口 handleSendEnvelope（供 index2.html 中 onclick 调用） =====
-    window.handleSendEnvelope = function() {
-        sendLetter();
-    };
-
-    // ===== 新增：兼容旧接口 openNewEnvelopeForm（供 index2.html 中 onclick 调用） =====
-    window.openNewEnvelopeForm = function() {
-        openCompose();
-    };
-
-    // ===== 新增：兼容旧接口 cancelEnvelopeCompose（供 index2.html 中 onclick 调用） =====
-    window.cancelEnvelopeCompose = function() {
-        cancelCompose();
-    };
-
-    // ===== 新增：兼容旧接口 switchEnvTab（供 index2.html 中 onclick 调用） =====
-    window.switchEnvTab = function(tab) {
-        switchTab(tab);
-    };
-
-    // 内部加载数据
-    function loadData(callback) {
-        if (typeof localforage === 'undefined') {
-            callback(data);
-            return;
-        }
-        localforage.getItem(storageKey()).then(function(saved) {
-            if (saved && typeof saved === 'object') {
-                data = saved;
-                if (!Array.isArray(data.outbox)) data.outbox = [];
-                if (!Array.isArray(data.inbox)) data.inbox = [];
-            }
-            // 同步到全局变量
-            window.envelopeData = data;
-            callback(data);
-        }).catch(function() {
-            callback(data);
-        });
-    }
-
-    // 内部保存数据
-    function saveData() {
-        if (typeof localforage === 'undefined') return;
-        localforage.setItem(storageKey(), data).catch(function(){});
-        // 同步到全局变量
-        window.envelopeData = data;
-    }
-
-    // 渲染寄出的信
+    // ===== 渲染列表 =====
     function renderOutbox() {
         var list = $('env-outbox-list');
         if (!list) return;
-        if (data.outbox.length === 0) {
+        var outbox = window.envelopeData.outbox || [];
+        if (outbox.length === 0) {
             list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-secondary);">还没有寄出任何信件</div>';
         } else {
-            list.innerHTML = data.outbox.slice().reverse().map(function(letter) {
+            list.innerHTML = outbox.slice().reverse().map(function(letter) {
                 var d = new Date(letter.sentTime).toLocaleString('zh-CN');
                 var p = (letter.content || '').substring(0, 35);
                 return '<div style="padding:8px 12px;border-bottom:1px solid var(--border-color);font-size:13px;">📤 ' + d + '<br>' + p + '</div>';
@@ -109,14 +58,14 @@
         }
     }
 
-    // 渲染收到的信
     function renderInbox() {
         var list = $('env-inbox-list');
         if (!list) return;
-        if (data.inbox.length === 0) {
+        var inbox = window.envelopeData.inbox || [];
+        if (inbox.length === 0) {
             list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-secondary);">还没有收到回信</div>';
         } else {
-            list.innerHTML = data.inbox.slice().reverse().map(function(letter) {
+            list.innerHTML = inbox.slice().reverse().map(function(letter) {
                 var d = new Date(letter.receivedTime).toLocaleString('zh-CN');
                 var p = (letter.content || '').substring(0, 35);
                 return '<div style="padding:8px 12px;border-bottom:1px solid var(--border-color);font-size:13px;">📥 ' + d + '<br>' + p + '</div>';
@@ -129,8 +78,8 @@
         renderInbox();
     }
 
-    // 切换标签
-    function switchTab(tab) {
+    // ===== 切换标签 =====
+    window.switchEnvTab = function(tab) {
         currentTab = tab;
         if (tab === 'outbox') {
             show('env-outbox-section');
@@ -142,42 +91,35 @@
         hide('env-compose-form');
         showFlex('env-main-close-btn');
         renderAll();
-    }
+    };
 
-    // 打开写信表单
-    function openCompose() {
-        var outboxSec = $('env-outbox-section');
-        var inboxSec = $('env-inbox-section');
-        var closeBtn = $('env-main-close-btn');
+    // ===== 提笔写信 =====
+    window.openNewEnvelopeForm = function() {
+        hide('env-outbox-section');
+        hide('env-inbox-section');
+        hide('env-main-close-btn');
         var form = $('env-compose-form');
-        var input = $('envelope-input');
-
-        if (outboxSec) outboxSec.style.display = 'none';
-        if (inboxSec) inboxSec.style.display = 'none';
-        if (closeBtn) closeBtn.style.display = 'none';
-
         if (form) {
             form.style.display = 'block';
             form.style.visibility = 'visible';
         }
-
+        var input = $('envelope-input');
         if (input) input.value = '';
-
         var cb = $('env-send-to-chat');
         if (cb) cb.checked = false;
-    }
+    };
 
-    // 取消写信
-    function cancelCompose() {
+    // ===== 取消写信 =====
+    window.cancelEnvelopeCompose = function() {
         hide('env-compose-form');
         showFlex('env-main-close-btn');
         show('env-outbox-section');
         hide('env-inbox-section');
         currentTab = 'outbox';
-    }
+    };
 
-    // 寄信核心
-    function sendLetter() {
+    // ===== 寄信 =====
+    window.handleSendEnvelope = function() {
         var input = $('envelope-input');
         var content = input ? input.value.trim() : '';
         if (!content) {
@@ -185,101 +127,72 @@
             return;
         }
 
-        data.outbox.unshift({
+        var outbox = window.envelopeData.outbox || [];
+        outbox.unshift({
             id: 'env_' + Date.now(),
             content: content,
             sentTime: Date.now(),
             status: 'pending'
         });
+        window.envelopeData.outbox = outbox;
 
-        // 保存并同步全局变量
-        saveData();
-        window.envelopeData = data;
+        // 保存到存储
+        window.saveEnvelopeData();
 
+        // 界面切换
         hide('env-compose-form');
         showFlex('env-main-close-btn');
         show('env-outbox-section');
         hide('env-inbox-section');
         currentTab = 'outbox';
-
         if (input) input.value = '';
 
         renderAll();
 
         if (typeof showNotification === 'function') showNotification('信已寄出 ✨', 'success');
-    }
+    };
 
-    // 绑定事件（只绑定一次）
-    function bindEventsOnce() {
-        if (eventsBound) return;
-        eventsBound = true;
-
+    // ===== 自动修复 onclick 属性 =====
+    function fixOnclickAttributes() {
+        // 提笔写信按钮
         var newBtn = $('new-envelope-btn');
-        if (newBtn) {
-            newBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                e.preventDefault();
-                openCompose();
-            }, true);
-        }
+        if (newBtn) newBtn.setAttribute('onclick', 'openNewEnvelopeForm()');
 
+        // 寄信按钮
         var sendBtn = $('send-envelope');
-        if (sendBtn) {
-            var newSend = sendBtn.cloneNode(true);
-            if (sendBtn.parentNode) sendBtn.parentNode.replaceChild(newSend, sendBtn);
-            newSend.addEventListener('click', function(e) {
-                e.stopPropagation();
-                e.preventDefault();
-                sendLetter();
-            }, true);
-        }
+        if (sendBtn) sendBtn.setAttribute('onclick', 'handleSendEnvelope()');
 
+        // 取消按钮
         var cancelBtn = $('cancel-compose');
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                cancelCompose();
-            }, true);
-        }
+        if (cancelBtn) cancelBtn.setAttribute('onclick', 'cancelEnvelopeCompose()');
 
+        // 标签切换
         var outboxTab = $('env-tab-outbox');
-        if (outboxTab) {
-            outboxTab.addEventListener('click', function() {
-                switchTab('outbox');
-            }, true);
-        }
+        if (outboxTab) outboxTab.setAttribute('onclick', "switchEnvTab('outbox')");
         var inboxTab = $('env-tab-inbox');
-        if (inboxTab) {
-            inboxTab.addEventListener('click', function() {
-                switchTab('inbox');
-            }, true);
-        }
+        if (inboxTab) inboxTab.setAttribute('onclick', "switchEnvTab('inbox')");
+
+        // 关闭按钮
+        var closeBtn = $('cancel-envelope');
+        if (closeBtn) closeBtn.setAttribute('onclick', "hideModal(document.getElementById('envelope-modal'))");
     }
 
-    // 页面加载和数据初始化
+    // ===== 初始化 =====
     function init() {
-        loadData(function() {
+        // 加载数据
+        window.loadEnvelopeData().then(function() {
+            renderAll();
+        }).catch(function() {
             renderAll();
         });
-        setTimeout(bindEventsOnce, 500);
+
+        // 延迟修复 onclick 属性，确保 DOM 完全加载
+        setTimeout(fixOnclickAttributes, 300);
+        // 二次保障
+        setTimeout(fixOnclickAttributes, 1000);
     }
 
-    // 当信封弹窗显示时，重新绑定事件和加载数据
-    var modal = $('envelope-modal');
-    if (modal) {
-        var observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.target.style.display === 'flex' || mutation.target.style.display === 'block') {
-                    loadData(function() { renderAll(); });
-                    eventsBound = false;
-                    bindEventsOnce();
-                }
-            });
-        });
-        observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
-    }
-
-    // 启动
+    // 页面加载完成后执行
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
