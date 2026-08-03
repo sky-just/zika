@@ -1,7 +1,8 @@
-// envelope.js - 最终完全健壮版（修复闪退、重复、残留）
+// envelope.js - 最终兼容版（与 core.js 接口对齐）
 (function() {
     'use strict';
 
+    // 内部数据变量
     var data = { outbox: [], inbox: [] };
     var currentTab = 'outbox';
     var eventsBound = false;
@@ -14,13 +15,58 @@
     function show(id) { var el = $(id); if (el) { el.style.display = 'block'; el.style.visibility = 'visible'; } }
     function showFlex(id) { var el = $(id); if (el) el.style.display = 'flex'; }
 
-    // 存储键
+    // 存储键（优先使用 getStorageKey，确保与 core.js 一致）
     function storageKey() {
         if (typeof getStorageKey === 'function') return getStorageKey('envelopeData');
         return 'CHAT_APP_V3_default_envelopeData';
     }
 
-    // 加载数据
+    // ===== 新增：兼容旧接口 loadEnvelopeData（供 core.js 调用） =====
+    window.loadEnvelopeData = async function() {
+        if (typeof localforage === 'undefined') return;
+        try {
+            var saved = await localforage.getItem(storageKey());
+            if (saved && typeof saved === 'object') {
+                data = saved;
+                if (!Array.isArray(data.outbox)) data.outbox = [];
+                if (!Array.isArray(data.inbox)) data.inbox = [];
+            }
+        } catch(e) {
+            data = { outbox: [], inbox: [] };
+        }
+        // 同步到全局变量
+        window.envelopeData = data;
+    };
+
+    // ===== 新增：兼容旧接口 saveEnvelopeData（供 core.js 调用） =====
+    window.saveEnvelopeData = function() {
+        if (typeof localforage === 'undefined') return;
+        localforage.setItem(storageKey(), data).catch(function(){});
+        // 同步到全局变量
+        window.envelopeData = data;
+    };
+
+    // ===== 新增：兼容旧接口 handleSendEnvelope（供 index2.html 中 onclick 调用） =====
+    window.handleSendEnvelope = function() {
+        sendLetter();
+    };
+
+    // ===== 新增：兼容旧接口 openNewEnvelopeForm（供 index2.html 中 onclick 调用） =====
+    window.openNewEnvelopeForm = function() {
+        openCompose();
+    };
+
+    // ===== 新增：兼容旧接口 cancelEnvelopeCompose（供 index2.html 中 onclick 调用） =====
+    window.cancelEnvelopeCompose = function() {
+        cancelCompose();
+    };
+
+    // ===== 新增：兼容旧接口 switchEnvTab（供 index2.html 中 onclick 调用） =====
+    window.switchEnvTab = function(tab) {
+        switchTab(tab);
+    };
+
+    // 内部加载数据
     function loadData(callback) {
         if (typeof localforage === 'undefined') {
             callback(data);
@@ -32,16 +78,20 @@
                 if (!Array.isArray(data.outbox)) data.outbox = [];
                 if (!Array.isArray(data.inbox)) data.inbox = [];
             }
+            // 同步到全局变量
+            window.envelopeData = data;
             callback(data);
         }).catch(function() {
             callback(data);
         });
     }
 
-    // 保存数据
+    // 内部保存数据
     function saveData() {
         if (typeof localforage === 'undefined') return;
         localforage.setItem(storageKey(), data).catch(function(){});
+        // 同步到全局变量
+        window.envelopeData = data;
     }
 
     // 渲染寄出的信
@@ -94,30 +144,25 @@
         renderAll();
     }
 
-    // 打开写信表单（加强安全版）
+    // 打开写信表单
     function openCompose() {
-        // 确保所有元素存在
         var outboxSec = $('env-outbox-section');
         var inboxSec = $('env-inbox-section');
         var closeBtn = $('env-main-close-btn');
         var form = $('env-compose-form');
         var input = $('envelope-input');
 
-        // 安全隐藏
         if (outboxSec) outboxSec.style.display = 'none';
         if (inboxSec) inboxSec.style.display = 'none';
         if (closeBtn) closeBtn.style.display = 'none';
 
-        // 显示表单
         if (form) {
             form.style.display = 'block';
             form.style.visibility = 'visible';
         }
 
-        // 清空输入
         if (input) input.value = '';
 
-        // 可选：清空复选框
         var cb = $('env-send-to-chat');
         if (cb) cb.checked = false;
     }
@@ -140,7 +185,6 @@
             return;
         }
 
-        // 添加到数据
         data.outbox.unshift({
             id: 'env_' + Date.now(),
             content: content,
@@ -148,17 +192,16 @@
             status: 'pending'
         });
 
-        // 保存
+        // 保存并同步全局变量
         saveData();
+        window.envelopeData = data;
 
-        // 强制清理所有可能残留的界面状态
         hide('env-compose-form');
         showFlex('env-main-close-btn');
         show('env-outbox-section');
         hide('env-inbox-section');
         currentTab = 'outbox';
 
-        // 清空输入框（确保没有残留文字）
         if (input) input.value = '';
 
         renderAll();
@@ -171,7 +214,6 @@
         if (eventsBound) return;
         eventsBound = true;
 
-        // 提笔写信按钮 - 使用捕获阶段确保优先
         var newBtn = $('new-envelope-btn');
         if (newBtn) {
             newBtn.addEventListener('click', function(e) {
@@ -181,7 +223,6 @@
             }, true);
         }
 
-        // 寄信按钮 - 完全替换旧事件
         var sendBtn = $('send-envelope');
         if (sendBtn) {
             var newSend = sendBtn.cloneNode(true);
@@ -193,7 +234,6 @@
             }, true);
         }
 
-        // 取消按钮
         var cancelBtn = $('cancel-compose');
         if (cancelBtn) {
             cancelBtn.addEventListener('click', function(e) {
@@ -202,7 +242,6 @@
             }, true);
         }
 
-        // 标签切换
         var outboxTab = $('env-tab-outbox');
         if (outboxTab) {
             outboxTab.addEventListener('click', function() {
@@ -222,18 +261,16 @@
         loadData(function() {
             renderAll();
         });
-        // 延迟绑定事件，确保 DOM 完全就绪
         setTimeout(bindEventsOnce, 500);
     }
 
-    // 当信封弹窗显示时，重新绑定事件和加载数据（兜底）
+    // 当信封弹窗显示时，重新绑定事件和加载数据
     var modal = $('envelope-modal');
     if (modal) {
         var observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
                 if (mutation.target.style.display === 'flex' || mutation.target.style.display === 'block') {
                     loadData(function() { renderAll(); });
-                    // 重新绑定，防止事件丢失
                     eventsBound = false;
                     bindEventsOnce();
                 }
