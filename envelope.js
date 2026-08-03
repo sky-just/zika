@@ -1,6 +1,15 @@
-// envelope.js - 精简修复版
+// envelope.js - 最终稳定版
 var envelopeData = { outbox: [], inbox: [] };
 var currentEnvTab = 'outbox';
+
+// 安全获取元素
+function $id(id) { return document.getElementById(id); }
+
+// 安全设置样式
+function setDisplay(id, value) {
+    var el = $id(id);
+    if (el) el.style.display = value;
+}
 
 // 从存储加载数据
 async function loadEnvelopeData() {
@@ -19,7 +28,7 @@ async function loadEnvelopeData() {
     renderEnvelopeLists();
 }
 
-// 保存数据到存储
+// 保存数据
 function saveEnvelopeData() {
     try {
         if (typeof localforage !== 'undefined' && typeof getStorageKey === 'function') {
@@ -28,9 +37,9 @@ function saveEnvelopeData() {
     } catch(e) {}
 }
 
-// 渲染寄出的信列表
+// 渲染寄出的信
 function renderOutboxList() {
-    var list = document.getElementById('env-outbox-list');
+    var list = $id('env-outbox-list');
     if (!list) return;
     var outbox = envelopeData.outbox || [];
     if (outbox.length === 0) {
@@ -45,9 +54,9 @@ function renderOutboxList() {
     }
 }
 
-// 渲染收到的信列表
+// 渲染收到的信
 function renderInboxList() {
-    var list = document.getElementById('env-inbox-list');
+    var list = $id('env-inbox-list');
     if (!list) return;
     var inbox = envelopeData.inbox || [];
     if (inbox.length === 0) {
@@ -62,25 +71,21 @@ function renderInboxList() {
     }
 }
 
-// 渲染所有列表
 function renderEnvelopeLists() {
     renderOutboxList();
     renderInboxList();
 }
 
-// ===== 寄信核心函数 =====
+// ===== 寄信核心 =====
 window.handleSendEnvelope = function() {
-    var input = document.getElementById('envelope-input');
+    var input = $id('envelope-input');
     var content = input ? input.value.trim() : '';
     
     if (!content) {
-        if (typeof showNotification === 'function') {
-            showNotification('请先写下你的思念...', 'warning');
-        }
+        if (typeof showNotification === 'function') showNotification('请先写下你的思念...', 'warning');
         return;
     }
 
-    // 创建新信件
     var newLetter = {
         id: 'env_' + Date.now(),
         content: content,
@@ -88,66 +93,75 @@ window.handleSendEnvelope = function() {
         status: 'pending'
     };
 
-    // 确保数据对象存在
     if (!envelopeData) envelopeData = { outbox: [], inbox: [] };
     if (!Array.isArray(envelopeData.outbox)) envelopeData.outbox = [];
     envelopeData.outbox.unshift(newLetter);
 
-    // 保存
     saveEnvelopeData();
 
-    // 关闭写信界面，显示列表
-    var form = document.getElementById('env-compose-form');
-    var closeBtn = document.getElementById('env-main-close-btn');
-    var outboxSection = document.getElementById('env-outbox-section');
-    var inboxSection = document.getElementById('env-inbox-section');
-
-    if (form) form.style.display = 'none';
-    if (closeBtn) closeBtn.style.display = 'flex';
-    if (outboxSection) outboxSection.style.display = 'block';
-    if (inboxSection) inboxSection.style.display = 'none';
+    setDisplay('env-compose-form', 'none');
+    setDisplay('env-main-close-btn', 'flex');
+    setDisplay('env-outbox-section', 'block');
+    setDisplay('env-inbox-section', 'none');
     if (input) input.value = '';
 
-    // 刷新列表
     renderEnvelopeLists();
-
-    if (typeof showNotification === 'function') {
-        showNotification('信已寄出 ✨', 'success');
-    }
+    if (typeof showNotification === 'function') showNotification('信已寄出 ✨', 'success');
 };
 
 // ===== 提笔写信 =====
 window.openNewEnvelopeForm = function() {
-    document.getElementById('env-outbox-section').style.display = 'none';
-    document.getElementById('env-inbox-section').style.display = 'none';
-    document.getElementById('env-main-close-btn').style.display = 'none';
-    var form = document.getElementById('env-compose-form');
+    setDisplay('env-outbox-section', 'none');
+    setDisplay('env-inbox-section', 'none');
+    setDisplay('env-main-close-btn', 'none');
+    
+    var form = $id('env-compose-form');
     if (form) {
         form.style.display = 'block';
         form.style.visibility = 'visible';
     }
-    document.getElementById('envelope-input').value = '';
-    document.getElementById('env-send-to-chat').checked = false;
+    
+    var input = $id('envelope-input');
+    if (input) input.value = '';
+    
+    var checkbox = $id('env-send-to-chat');
+    if (checkbox) checkbox.checked = false;
 };
 
 // ===== 取消写信 =====
 window.cancelEnvelopeCompose = function() {
-    document.getElementById('env-compose-form').style.display = 'none';
-    document.getElementById('env-main-close-btn').style.display = 'flex';
-    document.getElementById('env-outbox-section').style.display = 'block';
+    setDisplay('env-compose-form', 'none');
+    setDisplay('env-main-close-btn', 'flex');
+    setDisplay('env-outbox-section', 'block');
 };
 
 // ===== 标签切换 =====
 window.switchEnvTab = function(tab) {
     currentEnvTab = tab;
-    document.getElementById('env-outbox-section').style.display = tab === 'outbox' ? 'block' : 'none';
-    document.getElementById('env-inbox-section').style.display = tab === 'inbox' ? 'block' : 'none';
-    document.getElementById('env-compose-form').style.display = 'none';
-    document.getElementById('env-main-close-btn').style.display = 'flex';
+    setDisplay('env-outbox-section', tab === 'outbox' ? 'block' : 'none');
+    setDisplay('env-inbox-section', tab === 'inbox' ? 'block' : 'none');
+    setDisplay('env-compose-form', 'none');
+    setDisplay('env-main-close-btn', 'flex');
     renderEnvelopeLists();
 };
 
-// ===== 页面加载时初始化 =====
-setTimeout(function() {
-    loadEnvelopeData();
-}, 1000);
+// ===== 自激活加载机制 =====
+(function() {
+    // 方式一：监听信封弹窗的样式变化
+    var modal = $id('envelope-modal');
+    if (modal) {
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.target.style.display === 'flex' || mutation.target.style.display === 'block') {
+                    loadEnvelopeData();
+                }
+            });
+        });
+        observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
+    }
+
+    // 方式二：延迟加载作为兜底
+    setTimeout(function() {
+        loadEnvelopeData();
+    }, 2000);
+})();
