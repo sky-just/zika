@@ -1,88 +1,125 @@
-window.handleSendEnvelope = function() {
-    if (_sending) return;
-    _sending = true;
+// envelope.js - 全新简洁版
+(function() {
+    'use strict';
 
-    try {
-        console.log('[信封调试] 1. 开始寄信');
-        
-        var input = $('envelope-input');
-        var content = input ? input.value.trim() : '';
-        console.log('[信封调试] 2. 获取内容:', content ? content.substring(0, 20) : '空');
-        
-        if (!content) {
-            _sending = false;
-            console.log('[信封调试] 3. 内容为空，终止');
-            if (typeof showNotification === 'function') {
-                showNotification('请先写下你的思念...', 'warning');
-            } else {
-                alert('请先写下你的思念...');
-            }
-            return;
-        }
+    // 全局数据
+    window.envelopeData = window.envelopeData || { outbox: [], inbox: [] };
+    var sending = false;
 
-        console.log('[信封调试] 4. 准备添加到数组');
-        var outbox = window.envelopeData.outbox || [];
-        outbox.unshift({
-            id: 'env_' + Date.now(),
-            content: content,
-            sentTime: Date.now(),
-            status: 'pending'
-        });
-        window.envelopeData.outbox = outbox;
-        console.log('[信封调试] 5. 已添加到数组，开始保存');
-        
-        window.saveEnvelopeData();
-        console.log('[信封调试] 6. 保存完毕，开始切换界面');
+    // 获取元素
+    function $(id) { return document.getElementById(id); }
 
-        // 界面切换 - 逐步调试
-        var form = $('env-compose-form');
-        console.log('[信封调试] 7. form元素:', form ? '存在' : '不存在');
-        if (form) {
-            form.style.display = 'none';
-            console.log('[信封调试] 8. 隐藏form成功');
-        } else {
-            console.error('[信封调试] 8. form元素不存在！');
-            alert('错误：找不到信件表单元素，请截图此提示');
-            _sending = false;
-            return;
-        }
+    // 安全隐藏/显示
+    function hide(id) { var el = $(id); if (el) el.style.display = 'none'; }
+    function show(id) { var el = $(id); if (el) { el.style.display = 'block'; } }
+    function showFlex(id) { var el = $(id); if (el) el.style.display = 'flex'; }
 
-        var closeBtn = $('env-main-close-btn');
-        console.log('[信封调试] 9. closeBtn:', closeBtn ? '存在' : '不存在');
-        if (closeBtn) {
-            closeBtn.style.display = 'flex';
-            console.log('[信封调试] 10. 显示closeBtn成功');
-        }
-
-        var outboxSection = $('env-outbox-section');
-        console.log('[信封调试] 11. outboxSection:', outboxSection ? '存在' : '不存在');
-        if (outboxSection) {
-            outboxSection.style.display = 'block';
-            console.log('[信封调试] 12. 显示outboxSection成功');
-        }
-
-        var inboxSection = $('env-inbox-section');
-        if (inboxSection) inboxSection.style.display = 'none';
-
-        if (input) input.value = '';
-        console.log('[信封调试] 13. 清空输入框，准备渲染列表');
-
-        renderAll();
-        console.log('[信封调试] 14. 渲染列表完成，准备显示通知');
-
-        if (typeof showNotification === 'function') {
-            showNotification('信已寄出 ✨', 'success');
-            console.log('[信封调试] 15. 通知已显示');
-        } else {
-            alert('信已寄出！');
-            console.log('[信封调试] 15. 使用alert通知');
-        }
-
-        console.log('[信封调试] 16. 寄信流程全部完成');
-    } catch(e) {
-        console.error('[信封调试] 出错:', e.message);
-        alert('寄信失败，错误信息：' + e.message + '\n请截图此提示并发送');
-    } finally {
-        setTimeout(function() { _sending = false; }, 500);
+    // 存储键
+    function key() {
+        if (typeof getStorageKey === 'function') return getStorageKey('envelopeData');
+        return 'CHAT_APP_V3_envelopeData';
     }
-};
+
+    // ===== 加载数据 =====
+    window.loadEnvelopeData = async function() {
+        if (typeof localforage === 'undefined') return;
+        try {
+            var saved = await localforage.getItem(key());
+            if (saved && saved.outbox) window.envelopeData = saved;
+        } catch(e) {}
+        refresh();
+    };
+
+    // ===== 保存数据 =====
+    window.saveEnvelopeData = function() {
+        if (typeof localforage === 'undefined') return;
+        localforage.setItem(key(), window.envelopeData).catch(function(){});
+    };
+
+    // ===== 刷新列表 =====
+    function refresh() {
+        var out = $('env-outbox-list');
+        var inn = $('env-inbox-list');
+        var d = window.envelopeData;
+
+        if (out) {
+            var arr = d.outbox || [];
+            out.innerHTML = arr.length === 0
+                ? '<div style="padding:20px;text-align:center;color:var(--text-secondary);">还没有寄出任何信件</div>'
+                : arr.slice().reverse().map(function(l) {
+                    var t = new Date(l.sentTime).toLocaleString('zh-CN');
+                    var p = (l.content || '').slice(0, 35);
+                    return '<div style="padding:8px 12px;border-bottom:1px solid var(--border-color);font-size:13px;">📤 ' + t + '<br>' + p + '</div>';
+                }).join('');
+        }
+
+        if (inn) {
+            var arr2 = d.inbox || [];
+            inn.innerHTML = arr2.length === 0
+                ? '<div style="padding:20px;text-align:center;color:var(--text-secondary);">还没有收到回信</div>'
+                : arr2.slice().reverse().map(function(l) {
+                    var t = new Date(l.receivedTime).toLocaleString('zh-CN');
+                    var p = (l.content || '').slice(0, 35);
+                    return '<div style="padding:8px 12px;border-bottom:1px solid var(--border-color);font-size:13px;">📥 ' + t + '<br>' + p + '</div>';
+                }).join('');
+        }
+    }
+
+    // ===== 提笔写信 =====
+    window.openNewEnvelopeForm = function() {
+        hide('env-outbox-section');
+        hide('env-inbox-section');
+        hide('env-main-close-btn');
+        show('env-compose-form');
+        var inp = $('envelope-input'); if (inp) inp.value = '';
+    };
+
+    // ===== 取消写信 =====
+    window.cancelEnvelopeCompose = function() {
+        hide('env-compose-form');
+        showFlex('env-main-close-btn');
+        show('env-outbox-section');
+    };
+
+    // ===== 切换标签 =====
+    window.switchEnvTab = function(tab) {
+        if (tab === 'outbox') { show('env-outbox-section'); hide('env-inbox-section'); }
+        else { show('env-inbox-section'); hide('env-outbox-section'); }
+        hide('env-compose-form');
+        showFlex('env-main-close-btn');
+        refresh();
+    };
+
+    // ===== 寄信 =====
+    window.handleSendEnvelope = function() {
+        if (sending) return;
+        sending = true;
+
+        var inp = $('envelope-input');
+        var text = inp ? inp.value.trim() : '';
+        if (!text) {
+            sending = false;
+            if (typeof showNotification === 'function') showNotification('请先写下你的思念...', 'warning');
+            return;
+        }
+
+        var arr = window.envelopeData.outbox || [];
+        arr.unshift({ id: 'env_' + Date.now(), content: text, sentTime: Date.now() });
+        window.envelopeData.outbox = arr;
+        window.saveEnvelopeData();
+
+        hide('env-compose-form');
+        showFlex('env-main-close-btn');
+        show('env-outbox-section');
+        hide('env-inbox-section');
+        if (inp) inp.value = '';
+
+        refresh();
+        if (typeof showNotification === 'function') showNotification('信已寄出 ✨', 'success');
+
+        setTimeout(function() { sending = false; }, 500);
+    };
+
+    // ===== 初始化 =====
+    window.loadEnvelopeData();
+})();
