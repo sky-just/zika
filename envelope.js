@@ -1,22 +1,27 @@
-// envelope.js - 补充 core.js 兼容接口
+// envelope.js - 最终兼容版 (直接挂载全局函数，兼容 core.js 和 onclick 调用)
 (function() {
     'use strict';
 
     // 全局数据变量
     window.envelopeData = window.envelopeData || { outbox: [], inbox: [] };
     var currentTab = 'outbox';
+    var _sending = false; // 防重复发送锁
 
+    // 安全获取元素
     function $(id) { return document.getElementById(id); }
+
+    // 安全设置显示状态
     function hide(id) { var el = $(id); if (el) el.style.display = 'none'; }
     function show(id) { var el = $(id); if (el) { el.style.display = 'block'; el.style.visibility = 'visible'; } }
     function showFlex(id) { var el = $(id); if (el) el.style.display = 'flex'; }
 
+    // 存储键 (与 core.js 保持一致)
     function storageKey() {
         if (typeof getStorageKey === 'function') return getStorageKey('envelopeData');
         return 'CHAT_APP_V3_envelopeData';
     }
 
-    // ===== core.js 需要的接口 =====
+    // ===== 核心接口：供 core.js 调用 =====
     window.loadEnvelopeData = async function() {
         if (typeof localforage === 'undefined') return;
         try {
@@ -37,7 +42,7 @@
         localforage.setItem(storageKey(), window.envelopeData).catch(function(){});
     };
 
-    // ===== index2.html onclick 需要的接口 =====
+    // ===== UI 函数：供 index2.html 中的 onclick 调用 =====
     window.openNewEnvelopeForm = function() {
         hide('env-outbox-section');
         hide('env-inbox-section');
@@ -65,7 +70,6 @@
         renderAll();
     };
 
-    var _sending = false;
     window.handleSendEnvelope = function() {
         if (_sending) return;
         _sending = true;
@@ -101,7 +105,7 @@
         setTimeout(function() { _sending = false; }, 500);
     };
 
-    // ===== 渲染 =====
+    // ===== 渲染函数 =====
     function renderOutbox() {
         var list = $('env-outbox-list');
         if (!list) return;
